@@ -44,15 +44,15 @@ func main() {
 			},
 			{
 				Name:  "set",
-				Usage: "set endoint's status in cluster",
+				Usage: "set endoint's status in a cluster",
 				Flags: []cli.Flag{
-					&cli.StringFlag{Name: "c", Usage: "use cluster `NAME`"},
+					&cli.StringFlag{Name: "c", Usage: "use cluster `NAME`", Required: true},
 				},
 				Subcommands: []*cli.Command{
 					{
-						Name:   "endpoints",
-						Usage:  "list endpoints",
-						Action: listEndpoints,
+						Name:   "endpoint",
+						Usage:  "set endpoint ADDRESS:PORT [HEALTH]",
+						Action: setEndpoints,
 					},
 				},
 			},

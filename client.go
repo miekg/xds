@@ -26,7 +26,7 @@ type Client struct {
 // New returns a new client that's dialed to addr using node as the local identifier.
 // if flgClear is set grpc.WithInsecure is added to opts.
 func New(c *cli.Context, addr, node string, opts ...grpc.DialOption) (*Client, error) {
-	if flgClear { // bit odd to use global flag like this...
+	if c.Bool("k") {
 		opts = append(opts, grpc.WithInsecure())
 	}
 	cc, err := grpc.Dial(addr, opts...)

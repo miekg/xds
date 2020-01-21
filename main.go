@@ -7,23 +7,16 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var (
-	flgServer string
-	flgNode   string
-	flgClear  bool
-	flgHeader bool
-)
-
 const padding = 3
 
 func main() {
 	app := &cli.App{
 		Version: "0.0.1",
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "s", Usage: "server `ADDRESS` to connect to", Destination: &flgServer, Value: "127.0.0.1:443"},
-			&cli.StringFlag{Name: "n", Usage: "node `ID` to use`", Destination: &flgNode, Value: "test-id"},
-			&cli.BoolFlag{Name: "k", Usage: "disable TLS", Destination: &flgClear},
-			&cli.BoolFlag{Name: "H", Usage: "print header in ouput", Destination: &flgHeader, Value: true},
+			&cli.StringFlag{Name: "s", Usage: "server `ADDRESS` to connect to", Value: "127.0.0.1:443"},
+			&cli.StringFlag{Name: "n", Usage: "node `ID` to use`", Value: "test-id"},
+			&cli.BoolFlag{Name: "k", Usage: "disable TLS"},
+			&cli.BoolFlag{Name: "H", Usage: "print header in ouput", Value: true},
 		},
 		Commands: []*cli.Command{
 			{
@@ -46,6 +39,20 @@ func main() {
 						Aliases: []string{"endpoint"},
 						Usage:   "list endpoints",
 						Action:  listEndpoints,
+					},
+				},
+			},
+			{
+				Name:  "set",
+				Usage: "set endoint's status in cluster",
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "c", Usage: "use cluster `NAME`"},
+				},
+				Subcommands: []*cli.Command{
+					{
+						Name:   "endpoints",
+						Usage:  "list endpoints",
+						Action: listEndpoints,
 					},
 				},
 			},

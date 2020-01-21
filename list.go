@@ -15,7 +15,7 @@ import (
 )
 
 func listClusters(c *cli.Context) error {
-	cl, err := New(c, flgServer, flgNode)
+	cl, err := New(c, c.String("s"), c.String("n"))
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func listClusters(c *cli.Context) error {
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
-	if flgHeader {
+	if c.Bool("H") {
 		fmt.Fprintln(w, "CLUSTER\tTYPE\t")
 	}
 	for _, u := range clusters {
@@ -60,7 +60,7 @@ func listClusters(c *cli.Context) error {
 }
 
 func listEndpoints(c *cli.Context) error {
-	cl, err := New(c, flgServer, flgNode)
+	cl, err := New(c, c.String("s"), c.String("n"))
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func listEndpoints(c *cli.Context) error {
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
-	if flgHeader {
+	if c.Bool("H") {
 		fmt.Fprintln(w, "CLUSTER\tENDPOINT\tSTATUS\tWEIGHT\t")
 	}
 	for _, e := range endpoints {

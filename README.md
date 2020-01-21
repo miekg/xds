@@ -37,3 +37,18 @@ cluster-v0-1   127.0.0.1:18080   UNKNOWN    0
 cluster-v0-2   127.0.0.1:18080   UNKNOWN    0
 cluster-v0-3   127.0.0.1:18080   UNKNOWN    0
 ~~~
+
+## Set
+
+endpoint is identified by address, cluser identified by name
+
+xdsctl set cluster weight|type -c cluster WEIGHT[TYPE]
+
+xdctl set endpoint load|weight|health -c cluster -e endpoint load|weight|health
+
+
+# rm, remove, delete
+
+xdsctl rm cluster -c cluster
+
+xdctl rm endpoint -c cluster -e endpoint

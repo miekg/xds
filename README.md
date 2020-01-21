@@ -11,7 +11,7 @@ xdsctl [OPTIONS] VERB [VERB] [ARGS]
 ## List
 
 ~~~
-xdsctl -k -s localhost:18000 list clusters
+xdsctl -k -s localhost:18000 list -c cluster [cluster]
 ~~~
 
 Shows:
@@ -25,7 +25,8 @@ cluster-v0-3   EDS
 ~~~
 
 ~~~
-xdsctl -k -s localhost:18000 list endpoints
+xdsctl -k -s localhost:18000 list -c cluster endpoints
+
 ~~~
 
 Will show:
@@ -37,7 +38,6 @@ cluster-v0-1   127.0.0.1:18080   UNKNOWN    0
 cluster-v0-2   127.0.0.1:18080   UNKNOWN    0
 cluster-v0-3   127.0.0.1:18080   UNKNOWN    0
 ~~~
-
 ## Set
 
 endpoint is identified by address, cluser identified by name
@@ -52,3 +52,8 @@ xdctl set endpoint load|weight|health -c cluster -e endpoint load|weight|health
 xdsctl rm cluster -c cluster
 
 xdctl rm endpoint -c cluster -e endpoint
+
+create a cluster if it doesn't already exist: xdsclt set -c cluster CLUSTER [TYPE]
+type defauls to EDS
+
+xdsctl set -c cluster endpoint [ADRESS] [HEALTH]

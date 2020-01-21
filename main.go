@@ -1,65 +1,65 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
-	"google.golang.org/grpc"
-)
-
-var (
-	flgServer = flag.String("s", "", "server address to connect to")
-	flgNode   = flag.String("n", "test-id", "node ID to use")
-	flgClear  = flag.Bool("k", false, "don't use TLS")
-	flgHeader = flag.Bool("h", true, "print header in output")
+	"github.com/urfave/cli/v2"
 )
 
 const padding = 3
 
 func main() {
-	flag.Parse()
-
-	mandatory := []string{"s"}
-	seen := make(map[string]struct{})
-
-	flag.VisitAll(func(f *flag.Flag) {
-		if f.Value.String() != "" {
-			seen[f.Name] = struct{}{}
-		}
-	})
-	for _, m := range mandatory {
-		if _, ok := seen[m]; !ok {
-			errorf(fmt.Errorf("mandatory flag %q not set", m))
-		}
+	app := &cli.App{
+		Version: "0.0.1",
+		Flags: []cli.Flag{
+			&cli.StringFlag{Name: "s", Usage: "server `ADDRESS` to connect to", Value: "127.0.0.1:443"},
+			&cli.StringFlag{Name: "n", Usage: "node `ID` to use`", Value: "test-id"},
+			&cli.BoolFlag{Name: "k", Usage: "disable TLS"},
+			&cli.BoolFlag{Name: "H", Usage: "print header in ouput", Value: true},
+		},
+		Commands: []*cli.Command{
+			{
+				Name:    "list",
+				Aliases: []string{"ls"},
+				Usage:   "list clusters or endpoints, no arguments will list clusters",
+				Action:  listClusters,
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "c", Usage: "list cluster `NAME`"},
+				},
+				Subcommands: []*cli.Command{
+					{
+						Name:    "clusters",
+						Aliases: []string{"cluster"},
+						Usage:   "list clusters",
+						Action:  listClusters,
+					},
+					{
+						Name:    "endpoints",
+						Aliases: []string{"endpoint"},
+						Usage:   "list endpoints",
+						Action:  listEndpoints,
+					},
+				},
+			},
+			{
+				Name:  "set",
+				Usage: "set endoint's status in cluster",
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "c", Usage: "use cluster `NAME`"},
+				},
+				Subcommands: []*cli.Command{
+					{
+						Name:   "endpoints",
+						Usage:  "list endpoints",
+						Action: listEndpoints,
+					},
+				},
+			},
+		},
 	}
 
-	args := flag.Args()
-	if len(args) == 0 {
-		errorf(fmt.Errorf("need verb"))
-	}
-
-	opts := []grpc.DialOption{}
-	if *flgClear {
-		opts = append(opts, grpc.WithInsecure())
-	}
-	c, err := New(*flgServer, *flgNode, opts...)
-	if err != nil {
-		errorf(err)
-	}
-	defer c.Stop()
-
-	// version, list cluster|endpoints implemented
-	switch args[0] {
-	case "version":
-		err = version(c, args[1:])
-	case "list":
-		err = list(c, args[1:])
-	default:
-		err = fmt.Errorf("wtf?")
-	}
-
-	if err != nil {
+	if err := app.Run(os.Args); err != nil {
 		errorf(err)
 	}
 }

@@ -8,59 +8,95 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	xdspb "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	corepb "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/urfave/cli/v2"
 )
 
-func list(c *Client, args []string) error {
-	if len(args) == 0 {
-		return fmt.Errorf("empty verb")
-	}
-	switch args[0] {
-	case "clusters":
-		return listCluster(c, args[1:])
-	case "endpoints":
-		return listEndpoint(c, args[1:])
-	}
-
-	return fmt.Errorf("unknown verb: %q", args[0])
-}
-
-func listCluster(c *Client, args []string) error {
-	stream, err := c.discovery(cdsURL, "", "", []string{})
+func listClusters(c *cli.Context) error {
+	cl, err := New(c, c.String("s"), c.String("n"))
 	if err != nil {
 		return err
 	}
-	clusters, err := c.receiveClusters(stream)
+	defer cl.Stop()
+
+	dr := xdspb.DiscoveryRequest{Node: cl.node}
+	if c.String("c") != "" {
+		dr.ResourceNames = []string{c.String("c")}
+	}
+	cds := xdspb.NewClusterDiscoveryServiceClient(cl.cc)
+	resp, err := cds.FetchClusters(c.Context, &dr)
 	if err != nil {
-		return err
+		return nil
+	}
+
+	clusters := []*xdspb.Cluster{}
+	for _, r := range resp.GetResources() {
+		var any ptypes.DynamicAny
+		if err := ptypes.UnmarshalAny(r, &any); err != nil {
+			continue
+		}
+		if c, ok := any.Message.(*xdspb.Cluster); !ok {
+			continue
+		} else {
+			clusters = append(clusters, c)
+		}
+	}
+	if len(clusters) == 0 {
+		return nil
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
-	if *flgHeader {
+	if c.Bool("H") {
 		fmt.Fprintln(w, "CLUSTER\tTYPE\t")
 	}
-	for _, c := range clusters {
-		fmt.Fprintf(w, "%s\t%s\t\n", c.GetName(), c.GetType())
+	for _, u := range clusters {
+		fmt.Fprintf(w, "%s\t%s\t\n", u.GetName(), u.GetType())
 	}
 
 	return nil
 }
 
-func listEndpoint(c *Client, args []string) error {
-	stream, err := c.discovery(edsURL, "", "", []string{})
+func listEndpoints(c *cli.Context) error {
+	cl, err := New(c, c.String("s"), c.String("n"))
 	if err != nil {
 		return err
 	}
-	endpoints, err := c.receiveEndpoints(stream)
+	defer cl.Stop()
+
+	dr := xdspb.DiscoveryRequest{Node: cl.node}
+	if c.String("c") != "" {
+		dr.ResourceNames = []string{c.String("c")}
+	}
+	eds := xdspb.NewEndpointDiscoveryServiceClient(cl.cc)
+	resp, err := eds.FetchEndpoints(c.Context, &dr)
 	if err != nil {
-		return err
+		return nil
+	}
+
+	endpoints := []*xdspb.ClusterLoadAssignment{}
+	for _, r := range resp.GetResources() {
+		var any ptypes.DynamicAny
+		if err := ptypes.UnmarshalAny(r, &any); err != nil {
+			continue
+		}
+		if c, ok := any.Message.(*xdspb.ClusterLoadAssignment); !ok {
+			continue
+		} else {
+			endpoints = append(endpoints, c)
+
+		}
+	}
+	if len(endpoints) == 0 {
+		return nil
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
-	if *flgHeader {
-		fmt.Fprintln(w, "CLUSTER\tENDPOINTS\tSTATUSES\tWEIGHTS\t")
+	if c.Bool("H") {
+		fmt.Fprintln(w, "CLUSTER\tENDPOINT\tSTATUS\tWEIGHT\t")
 	}
 	for _, e := range endpoints {
 		endpoints := []string{}

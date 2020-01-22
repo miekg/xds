@@ -14,7 +14,7 @@ func main() {
 		Version: "0.0.1",
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "s", Usage: "server `ADDRESS` to connect to", Value: "127.0.0.1:443"},
-			&cli.StringFlag{Name: "n", Usage: "node `ID` to use`", Value: "test-id"},
+			&cli.StringFlag{Name: "n", Usage: "node `ID` to use", Value: "test-id"},
 			&cli.BoolFlag{Name: "k", Usage: "disable TLS"},
 			&cli.BoolFlag{Name: "H", Usage: "print header in ouput", Value: true},
 		},

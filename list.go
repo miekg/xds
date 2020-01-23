@@ -146,7 +146,6 @@ func metadataToStringSlice(m *corepb.Metadata) []string {
 	fields := []string{}
 	for _, v := range m.FilterMetadata {
 		for k, v1 := range v.Fields {
-			println(k)
 			v2, ok := v1.Kind.(*structpb.Value_StringValue)
 			if !ok {
 				continue

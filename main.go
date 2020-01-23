@@ -13,46 +13,56 @@ func main() {
 	app := &cli.App{
 		Version: "0.0.1",
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "s", Usage: "server `ADDRESS` to connect to", Value: "127.0.0.1:443"},
+			&cli.StringFlag{Name: "s", Usage: "server `ADDRESS` to connect to", Required: true},
 			&cli.StringFlag{Name: "n", Usage: "node `ID` to use", Value: "test-id"},
 			&cli.BoolFlag{Name: "k", Usage: "disable TLS"},
 			&cli.BoolFlag{Name: "H", Usage: "print header in ouput", Value: true},
+			&cli.BoolFlag{Name: "N", Usage: "dry run", Value: false},
 		},
 		Commands: []*cli.Command{
 			{
 				Name:    "list",
 				Aliases: []string{"ls"},
-				Usage:   "list clusters or endpoints, no arguments will list clusters",
+				Usage:   "[CLUSTERS [ENDPOINT]]",
 				Action:  listClusters,
-				Flags: []cli.Flag{
-					&cli.StringFlag{Name: "c", Usage: "list cluster `NAME`"},
-				},
 				Subcommands: []*cli.Command{
 					{
 						Name:    "clusters",
 						Aliases: []string{"cluster"},
-						Usage:   "list clusters",
+						Usage:   "list cluster [CLUSTER]",
 						Action:  listClusters,
 					},
 					{
 						Name:    "endpoints",
 						Aliases: []string{"endpoint"},
-						Usage:   "list endpoints",
+						Usage:   "list endpoints [CLUSTER]",
 						Action:  listEndpoints,
 					},
 				},
 			},
 			{
-				Name:  "set",
-				Usage: "set endoint's status in a cluster",
-				Flags: []cli.Flag{
-					&cli.StringFlag{Name: "c", Usage: "use cluster `NAME`", Required: true},
-				},
+				Name:     "drain",
+				Category: "drain",
+				Usage:    "REGION ZONE SUBZONE or a CLUSTER [ENDPOINT]",
+				Action:   drain,
 				Subcommands: []*cli.Command{
 					{
-						Name:   "endpoint",
-						Usage:  "set endpoint ADDRESS:PORT [HEALTH]",
-						Action: setEndpoints,
+						Name:   "cluster",
+						Usage:  "drain cluster CLUSTER [ENDPOINT]",
+						Action: drainCluster,
+					},
+				},
+			},
+			{
+				Name:     "undrain",
+				Category: "drain",
+				Usage:    "REGION ZONE SUBZONE or a CLUSTER [ENDPOINT]",
+				Action:   undrain,
+				Subcommands: []*cli.Command{
+					{
+						Name:   "cluster",
+						Usage:  "undrain cluster CLUSTER [ENDPOINT]",
+						Action: undrainCluster,
 					},
 				},
 			},
@@ -68,3 +78,8 @@ func errorf(err error) {
 	fmt.Printf("%s\n", err)
 	os.Exit(1)
 }
+
+var (
+	ErrArg      = func(s []string) error { return fmt.Errorf("parse error with arguments: %v", s) }
+	ErrNotFound = func(s []string, typ string) error { return fmt.Errorf("no such %s: %q", typ, s) }
+)

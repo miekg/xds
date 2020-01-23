@@ -21,31 +21,39 @@ type adsStream adsgrpc.AggregatedDiscoveryService_StreamAggregatedResourcesClien
 type Client struct {
 	cc   *grpc.ClientConn
 	node *corepb.Node
+	dry  bool
 }
 
 // New returns a new client that's dialed to addr using node as the local identifier.
 // if flgClear is set grpc.WithInsecure is added to opts.
-func New(c *cli.Context, addr, node string, opts ...grpc.DialOption) (*Client, error) {
+func New(c *cli.Context, opts ...grpc.DialOption) (*Client, error) {
+	addr := c.String("s")
+	hostname, _ := os.Hostname()
+	node := &corepb.Node{Id: c.String("n"), Metadata: &structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"HOSTNAME": {
+				Kind: &structpb.Value_StringValue{StringValue: hostname},
+			},
+		}},
+		BuildVersion: c.String("v"),
+	}
+	if c.Bool("N") { // dryrun
+		return &Client{node: node, dry: true}, nil
+	}
 	if c.Bool("k") {
 		opts = append(opts, grpc.WithInsecure())
 	}
+
 	cc, err := grpc.Dial(addr, opts...)
 	if err != nil {
 		return nil, err
 	}
-	hostname, _ := os.Hostname()
-	cl := &Client{cc: cc, node: &corepb.Node{Id: node,
-		Metadata: &structpb.Struct{
-			Fields: map[string]*structpb.Value{
-				"HOSTNAME": {
-					Kind: &structpb.Value_StringValue{StringValue: hostname},
-				},
-			},
-		},
-		BuildVersion: c.String("v"),
-	},
-	}
-	return cl, nil
+	return &Client{cc: cc, node: node}, nil
 }
 
-func (c *Client) Stop() error { return c.cc.Close() }
+func (c *Client) Stop() error {
+	if c.dry {
+		return nil
+	}
+	return c.cc.Close()
+}

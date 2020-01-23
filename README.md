@@ -11,7 +11,7 @@ xdsctl [OPTIONS] VERB [VERB] [ARGS]
 ## List
 
 ~~~
-xdsctl -k -s localhost:18000 list -c cluster [cluster]
+xdsctl list cluster [CLUSTER]
 ~~~
 
 Shows:
@@ -25,35 +25,32 @@ cluster-v0-3   EDS
 ~~~
 
 ~~~
-xdsctl -k -s localhost:18000 list -c cluster endpoints
-
+xdsctl list endpoints [CLUSTER]
 ~~~
 
-Will show:
+## Drain
 
-~~~
-CLUSTER        ENDPOINTS         STATUSES   WEIGHTS
-cluster-v0-0   127.0.0.1:18080   UNKNOWN    0
-cluster-v0-1   127.0.0.1:18080   UNKNOWN    0
-cluster-v0-2   127.0.0.1:18080   UNKNOWN    0
-cluster-v0-3   127.0.0.1:18080   UNKNOWN    0
-~~~
+xdsctl drain cluster CLUSTER [ENDPOINT]
+xdsctl drain cluster CLUSTER [ENDPOINT [HEALTH]] - sets endpoint health status to DRAIN
+
+xsdctl drain region [REGION]
+xdsctl drain zone [ZONE]
+xdsctl drain subzone [SUBZONE] specify cluster
+
 ## Set
 
 endpoint is identified by address, cluser identified by name
 
-xdsctl set cluster weight|type -c cluster WEIGHT[TYPE]
+xdsctl set cluster weight|type CLUSTER WEIGHT[TYPE]
 
-xdctl set endpoint load|weight|health -c cluster -e endpoint load|weight|health
+xdsctl set cluster CLUSTER  load|weight|health -c cluster -e endpoint load|weight|health
 
 
-# rm, remove, delete
+# rm, remove, delete??
 
-xdsctl rm cluster -c cluster
+xdsctl rm cluster CLUSTER [ENDPOINT]
 
-xdctl rm endpoint -c cluster -e endpoint
 
-create a cluster if it doesn't already exist: xdsclt set -c cluster CLUSTER [TYPE]
-type defauls to EDS
+# Race condition
 
-xdsctl set -c cluster endpoint [ADRESS] [HEALTH]
+what if you drain a cluster and then a new healthy end point is added?

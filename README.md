@@ -1,6 +1,8 @@
 # xdsctl
 
-Communicate with xDS endpoint.
+Communicate with an xDS endpoint.
+
+THIS NEED WORK - output from command itself it (of course) canonical at this moment.
 
 ## Usage
 

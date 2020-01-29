@@ -5,6 +5,7 @@ import (
 )
 
 func drain(c *cli.Context) error {
+	// call health, with the right arguments
 	cl, err := New(c)
 	if err != nil {
 		return err

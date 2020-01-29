@@ -21,63 +21,34 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			{
-				Name:    "list",
-				Aliases: []string{"ls"},
-				Usage:   "[CLUSTERS [ENDPOINT]]",
-				Action:  listClusters,
-				Subcommands: []*cli.Command{
-					{
-						Name:      "clusters",
-						Aliases:   []string{"cluster"},
-						Usage:     "list cluster [CLUSTER]",
-						ArgsUsage: "[CLUSTER]",
-						Action:    listClusters,
-					},
-					{
-						Name:      "endpoints",
-						Aliases:   []string{"endpoint"},
-						Usage:     "list endpoints [CLUSTER]",
-						ArgsUsage: "[CLUSTER]",
-						Action:    listEndpoints,
-					},
-				},
+				Name: "ls",
+				Description: "List lists clusters and endpoints of clusters. If no endpoint is given the entire cluster is listed.\n" +
+					"   If not cluster is given, all clusters are shown.",
+				Usage:     "list (all) clusters and endpoints",
+				ArgsUsage: "[CLUSTERS [ENDPOINT]]",
+				Action:    list,
 			},
 			{
 				Name:        "drain",
-				Description: "bla",
-				Category:    "drain",
-				Usage:       "CLUSTER [ENDPOINT]",
+				Description: "Drain sets the endpoint's health to DRAINING. If no endpoint is given all endpoints will be set.",
+				Category:    "health",
+				Usage:       "set health status to DRAINING for endpoints or entire clusters",
 				ArgsUsage:   "CLUSTER [ENDPOINT]",
 				Action:      drain,
-				Subcommands: []*cli.Command{
-					{
-						Name:      "cluster",
-						Usage:     "drain cluster CLUSTER [ENDPOINT]",
-						ArgsUsage: "CLUSTER [ENDPOINT]",
-						Action:    drainCluster,
-					},
-				},
 			},
 			{
 				Name:        "undrain",
-				Description: "bla",
-				Category:    "drain",
-				Usage:       "CLUSTER [ENDPOINT]",
+				Description: "Undrain sets the endpoint's health to UNKNOWN. If no endpoint is given all endpoints will be set.",
+				Category:    "health",
+				Usage:       "set health status to UNKNOWN for endpoints or entire clusters",
 				ArgsUsage:   "CLUSTER [ENDPOINT]",
 				Action:      undrain,
-				Subcommands: []*cli.Command{
-					{
-						Name:      "cluster",
-						Usage:     "undrain cluster CLUSTER [ENDPOINT]",
-						ArgsUsage: "CLUSTER [ENDPOINT]",
-						Action:    undrainCluster,
-					},
-				},
 			},
 			{
 				Name: "health",
 				Description: "Health sets the health for endpoints in a cluster. If no endpoint is given all endpoints will be set.\n" +
 					"   The mandatory argument HEALT_STATUS can be: 'UNKNOWN', 'HEALTHY', 'UNHEALTHY', 'DRAINING', 'TIMEOUT' or 'DEGRADED'.",
+				Category:  "health",
 				ArgsUsage: "CLUSTER [ENDPOINT] HEALTH_STATUS",
 				Usage:     "set health status for endpoints or entire clusters",
 				Action:    health,
@@ -91,10 +62,9 @@ func main() {
 				Action:      add,
 			},
 			{
-				Name:        "remove",
+				Name:        "rm",
 				Description: "Remove removes clusters and endpoints. If no endpoint is given the entire cluster is removed.",
 				Category:    "admin",
-				Aliases:     []string{"rm"},
 				Usage:       "remove  a cluster or remove a cluster and endpoint",
 				ArgsUsage:   "CLUSTER [ENDPOINT]",
 				Action:      remove,

@@ -15,7 +15,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func listClusters(c *cli.Context) error {
+func list(c *cli.Context) error {
 	cl, err := New(c)
 	if err != nil {
 		return err

@@ -1,58 +1,20 @@
 # xdsctl
 
-Communicate with an xDS endpoint.
+## Name
 
-THIS NEED WORK - output from command itself it (of course) canonical at this moment.
+xdsctl - communicate with a xDS endpoint.
 
-## Usage
+The are several commands implemented, just look at the help output of xdsctl (which should be fairly
+complete).
 
-~~~
-xdsctl [OPTIONS] VERB [VERB] [ARGS]
-~~~
+To keep things relatively simple *all* command will result in sending a DiscoveryRequest (reads) or
+a DiscoveryResponse to the xDS capable endpoint. The v2 API of Envoy's xDS is currently implemented.
 
-## List
+## See Also
 
-~~~
-xdsctl list cluster [CLUSTER]
-~~~
+<https://github.com/miekg/xdsd> is an xDS endpoint that implements a sane set of action upon
+receiving these requests.
 
-Shows:
+## Bugs
 
-~~~
-CLUSTER        TYPE
-cluster-v0-0   EDS
-cluster-v0-1   EDS
-cluster-v0-2   EDS
-cluster-v0-3   EDS
-~~~
-
-~~~
-xdsctl list endpoints [CLUSTER]
-~~~
-
-## Drain
-
-xdsctl drain cluster CLUSTER [ENDPOINT]
-xdsctl drain cluster CLUSTER [ENDPOINT [HEALTH]] - sets endpoint health status to DRAIN
-
-xsdctl drain region [REGION]
-xdsctl drain zone [ZONE]
-xdsctl drain subzone [SUBZONE] specify cluster
-
-## Set
-
-endpoint is identified by address, cluser identified by name
-
-xdsctl set cluster weight|type CLUSTER WEIGHT[TYPE]
-
-xdsctl set cluster CLUSTER  load|weight|health -c cluster -e endpoint load|weight|health
-
-
-# rm, remove, delete??
-
-xdsctl rm cluster CLUSTER [ENDPOINT]
-
-
-# Race condition
-
-what if you drain a cluster and then a new healthy end point is added?
+What if you drain a cluster and then a new healthy end point is added?

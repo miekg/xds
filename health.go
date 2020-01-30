@@ -79,7 +79,6 @@ func healthStatus(c *cli.Context, health string) error {
 						HealthStatus: corepb.HealthStatus(healthNameToValue(health)),
 						Endpoint:     ep,
 					})
-
 				}
 			}
 		}

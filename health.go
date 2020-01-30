@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	xdspb "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	corepb "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/urfave/cli/v2"
 )
 
@@ -31,12 +33,11 @@ func healthStatus(c *cli.Context, health string) error {
 		return ErrArg(args)
 	}
 
-	//	cluster := args[0]
+	cluster := args[0]
 	endpoint := ""
 	if len(args) == 3 {
 		endpoint = args[1]
 	}
-	endpoint = endpoint
 
 	cl, err := New(c)
 	if err != nil {
@@ -47,7 +48,56 @@ func healthStatus(c *cli.Context, health string) error {
 	if cl.dry {
 		return nil
 	}
+
+	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: cluster}
+	eds := xdspb.NewEndpointDiscoveryServiceClient(cl.cc)
+	resp, err := eds.FetchEndpoints(c.Context, dr)
+	if err != nil {
+		return err
+	}
+	// Get the endpoints for this cluster, then either set them all to health or just the
+	// one that matches.
+	done := false
+	endpoints := []*xdspb.ClusterLoadAssignment{}
 	hr := &healthpb.HealthCheckRequestOrEndpointHealthResponse{}
+	for _, r := range resp.GetResources() {
+		var any ptypes.DynamicAny
+		if err := ptypes.UnmarshalAny(r, &any); err != nil {
+			continue
+		}
+		c, ok := any.Message.(*xdspb.ClusterLoadAssignment)
+		if !ok {
+			continue
+		}
+		for i := range c.Endpoints {
+			for j := range c.Endpoints[i].LbEndpoints {
+				// check endpoint name is given.
+				c.Endpoints[i].LbEndpoints[j].HealthStatus = healthNameToValue(health)
+				done = true
+			}
+		}
+		endpoints = append(endpoints, c)
+	}
+	if !done {
+		return fmt.Errorf("no matching endpoints found")
+	}
+	/*
+		type EndpointHealthResponse struct {
+			EndpointsHealth      []*EndpointHealth `protobuf:"bytes,1,rep,name=endpoints_health,json=endpointsHealth,proto3" json:"endpoints_health,omitempty"`
+			XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+			XXX_unrecognized     []byte            `json:"-"`
+			XXX_sizecache        int32             `json:"-"`
+		}
+
+		type EndpointHealth struct {
+			Endpoint             *v31.Endpoint   `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+			HealthStatus         v3.HealthStatus `protobuf:"varint,2,opt,name=health_status,json=healthStatus,proto3,enum=envoy.config.core.v3.HealthStatus" json:"health_status,omitempty"`
+			XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+			XXX_unrecognized     []byte          `json:"-"`
+			XXX_sizecache        int32           `json:"-"`
+		}
+	*/
+
 	hds := healthpb.NewHealthDiscoveryServiceClient(cl.cc)
 	_, err = hds.FetchHealthCheck(c.Context, hr)
 	return err

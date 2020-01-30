@@ -7,8 +7,8 @@ xdsctl - communicate with a xDS endpoint.
 The are several commands implemented, just look at the help output of xdsctl (which should be fairly
 complete).
 
-We use xDS to extract discovery data from the management server. Health reporting
-(and setting endpoint state) is doing via the v3 Health Disovery Service
+We use xDS (v3) to extract discovery data from the management server. Health
+reporting (and setting endpoint state) is doing via the Health Disovery Service
 (HealthCheckRequestOrEndpointHealthResponse), where we send EndpointHealthResponses to it.
 
 The "admin" site of this tool (add, rm) isn't implemented yet, because I can't find the protobufs

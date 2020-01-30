@@ -11,7 +11,7 @@ const padding = 3
 
 func main() {
 	app := &cli.App{
-		Version: "0.0.1",
+		Version: "0.0.2",
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "s", Usage: "server `ADDRESS` to connect to", Required: true},
 			&cli.StringFlag{Name: "n", Usage: "node `ID` to use", Value: "test-id"},
@@ -50,7 +50,7 @@ func main() {
 				Usage:     "set health status to UNKNOWN for endpoints or entire clusters",
 				ArgsUsage: "CLUSTER [ENDPOINT]",
 				Action: func(c *cli.Context) error {
-					err := healthStatus(c, "DRAINING")
+					err := healthStatus(c, "UNKNOWN")
 					return err
 				},
 			},

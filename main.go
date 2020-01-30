@@ -18,7 +18,9 @@ func main() {
 			&cli.BoolFlag{Name: "k", Usage: "disable TLS"},
 			&cli.BoolFlag{Name: "H", Usage: "print header in ouput", Value: true},
 			&cli.BoolFlag{Name: "N", Usage: "dry run", Value: false},
+			&cli.BoolFlag{Name: "d", Usage: "dump protocol buffers to standard output", Value: false},
 		},
+		// load and locale (currently not set)
 		Commands: []*cli.Command{
 			{
 				Name: "ls",
@@ -83,6 +85,5 @@ func errorf(err error) {
 }
 
 var (
-	ErrArg      = func(s []string) error { return fmt.Errorf("parse error with arguments: %v", s) }
-	ErrNotFound = func(s []string, typ string) error { return fmt.Errorf("no such %s: %q", typ, s) }
+	ErrArg = func(s []string) error { return fmt.Errorf("parse error with arguments: %v", s) }
 )

@@ -7,8 +7,12 @@ xdsctl - communicate with a xDS endpoint.
 The are several commands implemented, just look at the help output of xdsctl (which should be fairly
 complete).
 
-To keep things relatively simple *all* command will result in sending a DiscoveryRequest (reads) or
-a DiscoveryResponse to the xDS capable endpoint. The v2 API of Envoy's xDS is currently implemented.
+We use xDS to extract discovery data from the management server. Health reporting
+(and setting endpoint state) is doing via the v3 Health Disovery Service
+(HealthCheckRequestOrEndpointHealthResponse), where we send EndpointHealthResponses to it.
+
+The "admin" site of this tool (add, rm) isn't implemented yet, because I can't find the protobufs
+that I need to implement this.
 
 ## See Also
 

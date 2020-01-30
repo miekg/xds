@@ -26,10 +26,9 @@ func list(c *cli.Context) error {
 		return nil
 	}
 
-	dr := xdspb.DiscoveryRequest{Node: cl.node}
-	dr.ResourceNames = c.Args().Slice()
+	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: c.Args().Slice()}
 	cds := xdspb.NewClusterDiscoveryServiceClient(cl.cc)
-	resp, err := cds.FetchClusters(c.Context, &dr)
+	resp, err := cds.FetchClusters(c.Context, dr)
 	if err != nil {
 		return err
 	}
@@ -47,7 +46,7 @@ func list(c *cli.Context) error {
 		}
 	}
 	if len(clusters) == 0 {
-		return ErrNotFound(dr.ResourceNames, "cluster")
+		return fmt.Errorf("no clusters found")
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
@@ -73,10 +72,9 @@ func listEndpoints(c *cli.Context) error {
 		return nil
 	}
 
-	dr := xdspb.DiscoveryRequest{Node: cl.node}
-	dr.ResourceNames = c.Args().Slice()
+	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: c.Args().Slice()}
 	eds := xdspb.NewEndpointDiscoveryServiceClient(cl.cc)
-	resp, err := eds.FetchEndpoints(c.Context, &dr)
+	resp, err := eds.FetchEndpoints(c.Context, dr)
 	if err != nil {
 		return err
 	}
@@ -95,7 +93,7 @@ func listEndpoints(c *cli.Context) error {
 		}
 	}
 	if len(endpoints) == 0 {
-		return ErrNotFound(dr.ResourceNames, "endpoint")
+		return fmt.Errorf("no endpoints found")
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)

@@ -9,13 +9,25 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// health sets the health for all endpoints in the cluster.
 func health(c *cli.Context) error {
+	args := c.Args().Slice()
+	if len(args) < 2 || len(args) > 3 {
+		return ErrArg(args)
+	}
+	if len(args) == 2 {
+		return healthStatus(c, args[1])
+	}
+	return healthStatus(c, args[2])
+}
+
+// health sets the health for all endpoints in the cluster.
+func healthStatus(c *cli.Context, status string) error {
 	// cluster [endpoint] health
 	args := c.Args().Slice()
 	if len(args) < 2 || len(args) > 3 {
 		return ErrArg(args)
 	}
+	// list cluster and then ....
 	cluster := args[0]
 	endpoint := ""
 	health := ""
@@ -30,10 +42,6 @@ func health(c *cli.Context) error {
 		return fmt.Errorf("unknown type of health: %s", health)
 	}
 
-	return setHealth(c, cluster, endpoint, health)
-}
-
-func setHealth(c *cli.Context, cluster, endpoint, health string) error {
 	cl, err := New(c)
 	if err != nil {
 		return err

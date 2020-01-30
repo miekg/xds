@@ -31,25 +31,34 @@ func main() {
 				Action:    list,
 			},
 			{
-				Name:        "drain",
-				Description: "Drain sets the endpoint's health to DRAINING. If no endpoint is given all endpoints will be set.",
-				Category:    "health",
-				Usage:       "set health status to DRAINING for endpoints or entire clusters",
-				ArgsUsage:   "CLUSTER [ENDPOINT]",
-				Action:      drain,
+				Name: "drain",
+				Description: "Drain sets the endpoint's health to DRAINING. If no endpoint is given all endpoints for this cluster will be set.\n" +
+					"   When clusters share endpoints they will get updated as well.",
+				Category:  "health",
+				Usage:     "set health status to DRAINING for endpoints or entire clusters",
+				ArgsUsage: "CLUSTER [ENDPOINT]",
+				Action: func(c *cli.Context) error {
+					err := healthStatus(c, "DRAINING")
+					return err
+				},
 			},
 			{
-				Name:        "undrain",
-				Description: "Undrain sets the endpoint's health to UNKNOWN. If no endpoint is given all endpoints will be set.",
-				Category:    "health",
-				Usage:       "set health status to UNKNOWN for endpoints or entire clusters",
-				ArgsUsage:   "CLUSTER [ENDPOINT]",
-				Action:      undrain,
+				Name: "undrain",
+				Description: "Undrain sets the endpoint's health to UNKNOWN. If no endpoint is given all endpoints for this cluster will be set.\n" +
+					"   When clusters share endpoints they will get updated as well.",
+				Category:  "health",
+				Usage:     "set health status to UNKNOWN for endpoints or entire clusters",
+				ArgsUsage: "CLUSTER [ENDPOINT]",
+				Action: func(c *cli.Context) error {
+					err := healthStatus(c, "DRAINING")
+					return err
+				},
 			},
 			{
 				Name: "health",
-				Description: "Health sets the health for endpoints in a cluster. If no endpoint is given all endpoints will be set.\n" +
-					"   The mandatory argument HEALT_STATUS can be: 'UNKNOWN', 'HEALTHY', 'UNHEALTHY', 'DRAINING', 'TIMEOUT' or 'DEGRADED'.",
+				Description: "Health sets the health for endpoints in a cluster. If no endpoint is given all endpoints for this cluster will be set.\n" +
+					"   The mandatory argument HEALT_STATUS can be: 'UNKNOWN', 'HEALTHY', 'UNHEALTHY', 'DRAINING', 'TIMEOUT' or 'DEGRADED'.\n" +
+					"   When clusters share ednpoint they will get updated as well.",
 				Category:  "health",
 				ArgsUsage: "CLUSTER [ENDPOINT] HEALTH_STATUS",
 				Usage:     "set health status for endpoints or entire clusters",

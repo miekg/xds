@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	xdspb "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	corepb "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/urfave/cli/v2"
@@ -49,8 +51,8 @@ func healthStatus(c *cli.Context, health string) error {
 		return nil
 	}
 
-	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: cluster}
-	eds := xdspb.NewEndpointDiscoveryServiceClient(cl.cc)
+	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: []string{cluster}}
+	eds := edspb.NewEndpointDiscoveryServiceClient(cl.cc)
 	resp, err := eds.FetchEndpoints(c.Context, dr)
 	if err != nil {
 		return err
@@ -58,21 +60,22 @@ func healthStatus(c *cli.Context, health string) error {
 	// Get the endpoints for this cluster, then either set them all to health or just the
 	// one that matches.
 	done := false
-	endpoints := []*xdspb.ClusterLoadAssignment{}
+	endpoints := []*endpointpb.ClusterLoadAssignment{}
 	hr := &healthpb.HealthCheckRequestOrEndpointHealthResponse{}
 	for _, r := range resp.GetResources() {
 		var any ptypes.DynamicAny
 		if err := ptypes.UnmarshalAny(r, &any); err != nil {
 			continue
 		}
-		c, ok := any.Message.(*xdspb.ClusterLoadAssignment)
+		c, ok := any.Message.(*endpointpb.ClusterLoadAssignment)
 		if !ok {
 			continue
 		}
 		for i := range c.Endpoints {
 			for j := range c.Endpoints[i].LbEndpoints {
 				// check endpoint name is given.
-				c.Endpoints[i].LbEndpoints[j].HealthStatus = healthNameToValue(health)
+				endpoint = endpoint
+				c.Endpoints[i].LbEndpoints[j].HealthStatus = corepb.HealthStatus(healthNameToValue(health))
 				done = true
 			}
 		}

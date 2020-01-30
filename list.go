@@ -8,8 +8,12 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	xdspb "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	corepb "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	cdspb "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
+	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	"github.com/golang/protobuf/ptypes"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/urfave/cli/v2"
@@ -27,19 +31,19 @@ func list(c *cli.Context) error {
 	}
 
 	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: c.Args().Slice()}
-	cds := xdspb.NewClusterDiscoveryServiceClient(cl.cc)
+	cds := cdspb.NewClusterDiscoveryServiceClient(cl.cc)
 	resp, err := cds.FetchClusters(c.Context, dr)
 	if err != nil {
 		return err
 	}
 
-	clusters := []*xdspb.Cluster{}
+	clusters := []*clusterpb.Cluster{}
 	for _, r := range resp.GetResources() {
 		var any ptypes.DynamicAny
 		if err := ptypes.UnmarshalAny(r, &any); err != nil {
 			continue
 		}
-		if c, ok := any.Message.(*xdspb.Cluster); !ok {
+		if c, ok := any.Message.(*clusterpb.Cluster); !ok {
 			continue
 		} else {
 			clusters = append(clusters, c)
@@ -73,19 +77,19 @@ func listEndpoints(c *cli.Context) error {
 	}
 
 	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: c.Args().Slice()}
-	eds := xdspb.NewEndpointDiscoveryServiceClient(cl.cc)
+	eds := edspb.NewEndpointDiscoveryServiceClient(cl.cc)
 	resp, err := eds.FetchEndpoints(c.Context, dr)
 	if err != nil {
 		return err
 	}
 
-	endpoints := []*xdspb.ClusterLoadAssignment{}
+	endpoints := []*endpointpb.ClusterLoadAssignment{}
 	for _, r := range resp.GetResources() {
 		var any ptypes.DynamicAny
 		if err := ptypes.UnmarshalAny(r, &any); err != nil {
 			continue
 		}
-		if c, ok := any.Message.(*xdspb.ClusterLoadAssignment); !ok {
+		if c, ok := any.Message.(*endpointpb.ClusterLoadAssignment); !ok {
 			continue
 		} else {
 			endpoints = append(endpoints, c)

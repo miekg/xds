@@ -21,14 +21,13 @@ import (
 	"strconv"
 	"sync/atomic"
 
+	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	cdspb "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/golang/protobuf/ptypes/any"
-	v2 "github.com/solo-io/solo-kit/pkg/api/external/envoy/api/v2"
-	"github.com/solo-io/solo-kit/pkg/api/external/envoy/api/v2/core"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -54,14 +53,14 @@ type Callbacks interface {
 	OnStreamClosed(int64)
 	// OnStreamRequest is called once a request is received on a stream.
 	// Returning an error will end processing and close the stream. OnStreamClosed will still be called.
-	OnStreamRequest(int64, *v2.DiscoveryRequest) error
+	OnStreamRequest(int64, *xdspb.DiscoveryRequest) error
 	// OnStreamResponse is called immediately prior to sending a response on a stream.
-	OnStreamResponse(int64, *v2.DiscoveryRequest, *v2.DiscoveryResponse)
+	OnStreamResponse(int64, *xdspb.DiscoveryRequest, *xdspb.DiscoveryResponse)
 	// OnFetchRequest is called for each Fetch request. Returning an error will end processing of the
 	// request and respond with an error.
-	OnFetchRequest(context.Context, *v2.DiscoveryRequest) error
+	OnFetchRequest(context.Context, *xdspb.DiscoveryRequest) error
 	// OnFetchResponse is called immediately prior to sending a response.
-	OnFetchResponse(*v2.DiscoveryRequest, *v2.DiscoveryResponse)
+	OnFetchResponse(*xdspb.DiscoveryRequest, *xdspb.DiscoveryResponse)
 }
 
 // NewServer creates handlers from a config watcher and callbacks.
@@ -81,8 +80,8 @@ type server struct {
 type stream interface {
 	grpc.ServerStream
 
-	Send(*v2.DiscoveryResponse) error
-	Recv() (*v2.DiscoveryRequest, error)
+	Send(*xdspb.DiscoveryResponse) error
+	Recv() (*xdspb.DiscoveryRequest, error)
 }
 
 // watches for all xDS resource types
@@ -131,7 +130,7 @@ func (values watches) Cancel() {
 	}
 }
 
-func createResponse(resp *cache.Response, typeURL string) (*v2.DiscoveryResponse, error) {
+func createResponse(resp *cache.Response, typeURL string) (*xdspb.DiscoveryResponse, error) {
 	if resp == nil {
 		return nil, errors.New("missing response")
 	}
@@ -163,7 +162,7 @@ func createResponse(resp *cache.Response, typeURL string) (*v2.DiscoveryResponse
 			}
 		}
 	}
-	out := &v2.DiscoveryResponse{
+	out := &xdspb.DiscoveryResponse{
 		VersionInfo: resp.Version,
 		Resources:   resources,
 		TypeUrl:     typeURL,
@@ -172,7 +171,7 @@ func createResponse(resp *cache.Response, typeURL string) (*v2.DiscoveryResponse
 }
 
 // process handles a bi-di stream request
-func (s *server) process(stream stream, reqCh <-chan *v2.DiscoveryRequest, defaultTypeURL string) error {
+func (s *server) process(stream stream, reqCh <-chan *xdspb.DiscoveryRequest, defaultTypeURL string) error {
 	// increment stream count
 	streamID := atomic.AddInt64(&s.streamCount, 1)
 
@@ -212,7 +211,7 @@ func (s *server) process(stream stream, reqCh <-chan *v2.DiscoveryRequest, defau
 	}
 
 	// node may only be set on the first discovery request
-	var node = &core.Node{}
+	var node = &corepb.Node{}
 
 	for {
 		select {
@@ -238,46 +237,6 @@ func (s *server) process(stream stream, reqCh <-chan *v2.DiscoveryRequest, defau
 				return err
 			}
 			values.clusterNonce = nonce
-
-		case resp, more := <-values.routes:
-			if !more {
-				return status.Errorf(codes.Unavailable, "routes watch failed")
-			}
-			nonce, err := send(resp, cache.RouteType)
-			if err != nil {
-				return err
-			}
-			values.routeNonce = nonce
-
-		case resp, more := <-values.listeners:
-			if !more {
-				return status.Errorf(codes.Unavailable, "listeners watch failed")
-			}
-			nonce, err := send(resp, cache.ListenerType)
-			if err != nil {
-				return err
-			}
-			values.listenerNonce = nonce
-
-		case resp, more := <-values.secrets:
-			if !more {
-				return status.Errorf(codes.Unavailable, "secrets watch failed")
-			}
-			nonce, err := send(resp, cache.SecretType)
-			if err != nil {
-				return err
-			}
-			values.secretNonce = nonce
-
-		case resp, more := <-values.runtimes:
-			if !more {
-				return status.Errorf(codes.Unavailable, "runtimes watch failed")
-			}
-			nonce, err := send(resp, cache.RuntimeType)
-			if err != nil {
-				return err
-			}
-			values.runtimeNonce = nonce
 
 		case req, more := <-reqCh:
 			// input stream ended or errored out
@@ -325,26 +284,6 @@ func (s *server) process(stream stream, reqCh <-chan *v2.DiscoveryRequest, defau
 					values.clusterCancel()
 				}
 				values.clusters, values.clusterCancel = s.cache.CreateWatch(*req)
-			case req.TypeUrl == cache.RouteType && (values.routeNonce == "" || values.routeNonce == nonce):
-				if values.routeCancel != nil {
-					values.routeCancel()
-				}
-				values.routes, values.routeCancel = s.cache.CreateWatch(*req)
-			case req.TypeUrl == cache.ListenerType && (values.listenerNonce == "" || values.listenerNonce == nonce):
-				if values.listenerCancel != nil {
-					values.listenerCancel()
-				}
-				values.listeners, values.listenerCancel = s.cache.CreateWatch(*req)
-			case req.TypeUrl == cache.SecretType && (values.secretNonce == "" || values.secretNonce == nonce):
-				if values.secretCancel != nil {
-					values.secretCancel()
-				}
-				values.secrets, values.secretCancel = s.cache.CreateWatch(*req)
-			case req.TypeUrl == cache.RuntimeType && (values.runtimeNonce == "" || values.runtimeNonce == nonce):
-				if values.runtimeCancel != nil {
-					values.runtimeCancel()
-				}
-				values.runtimes, values.runtimeCancel = s.cache.CreateWatch(*req)
 			}
 		}
 	}
@@ -353,7 +292,7 @@ func (s *server) process(stream stream, reqCh <-chan *v2.DiscoveryRequest, defau
 // handler converts a blocking read call to channels and initiates stream processing
 func (s *server) handler(stream stream, typeURL string) error {
 	// a channel for receiving incoming requests
-	reqCh := make(chan *v2.DiscoveryRequest)
+	reqCh := make(chan *xdspb.DiscoveryRequest)
 	reqStop := int32(0)
 	go func() {
 		for {
@@ -390,24 +329,8 @@ func (s *server) StreamClusters(stream v2grpc.ClusterDiscoveryService_StreamClus
 	return s.handler(stream, cache.ClusterType)
 }
 
-func (s *server) StreamRoutes(stream v2grpc.RouteDiscoveryService_StreamRoutesServer) error {
-	return s.handler(stream, cache.RouteType)
-}
-
-func (s *server) StreamListeners(stream v2grpc.ListenerDiscoveryService_StreamListenersServer) error {
-	return s.handler(stream, cache.ListenerType)
-}
-
-func (s *server) StreamSecrets(stream discoverygrpc.SecretDiscoveryService_StreamSecretsServer) error {
-	return s.handler(stream, cache.SecretType)
-}
-
-func (s *server) StreamRuntime(stream discoverygrpc.RuntimeDiscoveryService_StreamRuntimeServer) error {
-	return s.handler(stream, cache.RuntimeType)
-}
-
 // Fetch is the universal fetch method.
-func (s *server) Fetch(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+func (s *server) Fetch(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
 	if s.callbacks != nil {
 		if err := s.callbacks.OnFetchRequest(ctx, req); err != nil {
 			return nil, err
@@ -424,7 +347,7 @@ func (s *server) Fetch(ctx context.Context, req *v2.DiscoveryRequest) (*v2.Disco
 	return out, err
 }
 
-func (s *server) FetchEndpoints(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+func (s *server) FetchEndpoints(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.Unavailable, "empty request")
 	}
@@ -432,43 +355,11 @@ func (s *server) FetchEndpoints(ctx context.Context, req *v2.DiscoveryRequest) (
 	return s.Fetch(ctx, req)
 }
 
-func (s *server) FetchClusters(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+func (s *server) FetchClusters(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.Unavailable, "empty request")
 	}
 	req.TypeUrl = cache.ClusterType
-	return s.Fetch(ctx, req)
-}
-
-func (s *server) FetchRoutes(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	if req == nil {
-		return nil, status.Errorf(codes.Unavailable, "empty request")
-	}
-	req.TypeUrl = cache.RouteType
-	return s.Fetch(ctx, req)
-}
-
-func (s *server) FetchListeners(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	if req == nil {
-		return nil, status.Errorf(codes.Unavailable, "empty request")
-	}
-	req.TypeUrl = cache.ListenerType
-	return s.Fetch(ctx, req)
-}
-
-func (s *server) FetchSecrets(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	if req == nil {
-		return nil, status.Errorf(codes.Unavailable, "empty request")
-	}
-	req.TypeUrl = cache.SecretType
-	return s.Fetch(ctx, req)
-}
-
-func (s *server) FetchRuntime(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	if req == nil {
-		return nil, status.Errorf(codes.Unavailable, "empty request")
-	}
-	req.TypeUrl = cache.RuntimeType
 	return s.Fetch(ctx, req)
 }
 
@@ -481,21 +372,5 @@ func (s *server) DeltaEndpoints(_ v2grpc.EndpointDiscoveryService_DeltaEndpoints
 }
 
 func (s *server) DeltaClusters(_ v2grpc.ClusterDiscoveryService_DeltaClustersServer) error {
-	return errors.New("not implemented")
-}
-
-func (s *server) DeltaRoutes(_ v2grpc.RouteDiscoveryService_DeltaRoutesServer) error {
-	return errors.New("not implemented")
-}
-
-func (s *server) DeltaListeners(_ v2grpc.ListenerDiscoveryService_DeltaListenersServer) error {
-	return errors.New("not implemented")
-}
-
-func (s *server) DeltaSecrets(_ discoverygrpc.SecretDiscoveryService_DeltaSecretsServer) error {
-	return errors.New("not implemented")
-}
-
-func (s *server) DeltaRuntime(_ discoverygrpc.RuntimeDiscoveryService_DeltaRuntimeServer) error {
 	return errors.New("not implemented")
 }

@@ -1,4 +1,4 @@
-module github.com/miekg/xdsctl
+module github.com/miekg/xds
 
 go 1.13
 

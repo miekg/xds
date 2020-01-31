@@ -28,11 +28,10 @@ import (
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/miekg/xds/pkg/cache"
-	"github.com/miekg/xds/pkg/server"
-
 	"github.com/envoyproxy/go-control-plane/pkg/test"
-	"github.com/envoyproxy/go-control-plane/pkg/test/resource"
+	"github.com/miekg/xds/pkg/cache"
+	"github.com/miekg/xds/pkg/resource"
+	"github.com/miekg/xds/pkg/server"
 )
 
 var (
@@ -82,15 +81,11 @@ func main() {
 	flag.Parse()
 	ctx := context.Background()
 
-	// start upstream
-	go test.RunHTTP(ctx, upstreamPort)
-
 	// create a cache
 	signal := make(chan struct{})
 	cb := &callbacks{signal: signal}
 	config := cache.NewSnapshotCache(mode == resource.Ads, cache.IDHash{}, logger{})
 	srv := server.NewServer(context.Background(), config, cb)
-	als := &test.AccessLogService{}
 
 	// create a test snapshot
 	snapshots := resource.TestSnapshot{
@@ -107,7 +102,7 @@ func main() {
 	// start the xDS server
 	go test.RunAccessLogServer(ctx, als, alsPort)
 	go test.RunManagementServer(ctx, srv, port)
-	go test.RunManagementGateway(ctx, srv, gatewayPort, logger{})
+	go test.RunManagementGateway(ctx, srv, gatewayPort)
 
 	log.Println("waiting for the first request...")
 	select {

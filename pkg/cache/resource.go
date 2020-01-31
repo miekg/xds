@@ -15,10 +15,9 @@
 package cache
 
 import (
-	"github.com/golang/protobuf/proto"
-
 	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	"github.com/golang/protobuf/proto"
 )
 
 // Resource is the base interface for the xDS payload.

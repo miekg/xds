@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
+	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/miekg/xds/pkg/cache"
 )
 
 const (
@@ -49,12 +49,12 @@ var (
 
 // MakeEndpoint creates a localhost endpoint on a given port.
 func MakeEndpoint(clusterName string, port uint32) *endpointpb.ClusterLoadAssignment {
-	return &v2.ClusterLoadAssignment{
+	return &endpointpb.ClusterLoadAssignment{
 		ClusterName: clusterName,
-		Endpoints: []*endpoint.LocalityLbEndpoints{{
-			LbEndpoints: []*endpoint.LbEndpoint{{
-				HostIdentifier: &endpoint.LbEndpoint_Endpoint{
-					Endpoint: &endpoint.Endpoint{
+		Endpoints: []*endpointpb.LocalityLbEndpoints{{
+			LbEndpoints: []*endpointpb.LbEndpoint{{
+				HostIdentifier: &endpointpb.LbEndpoint_Endpoint{
+					Endpoint: &endpointpb.Endpoint{
 						Address: &corepb.Address{
 							Address: &corepb.Address_SocketAddress{
 								SocketAddress: &corepb.SocketAddress{
@@ -74,15 +74,15 @@ func MakeEndpoint(clusterName string, port uint32) *endpointpb.ClusterLoadAssign
 }
 
 // MakeCluster creates a cluster using either ADS or EDS.
-func MakeCluster(mode string, clusterName string) *v2.Cluster {
+func MakeCluster(mode string, clusterName string) *clusterpb.Cluster {
 	edsSource := configSource(mode)
 
 	connectTimeout := 5 * time.Second
-	return &v2.Cluster{
+	return &clusterpb.Cluster{
 		Name:                 clusterName,
 		ConnectTimeout:       ptypes.DurationProto(connectTimeout),
-		ClusterDiscoveryType: &v2.Cluster_Type{Type: v2.Cluster_EDS},
-		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+		ClusterDiscoveryType: &clusterpb.Cluster_Type{Type: clusterpb.Cluster_EDS},
+		EdsClusterConfig: &clusterpb.Cluster_EdsClusterConfig{
 			EdsConfig: edsSource,
 		},
 	}
@@ -100,15 +100,8 @@ type TestSnapshot struct {
 	BasePort uint32
 	// NumClusters is the total number of clusters to generate.
 	NumClusters int
-	// NumHTTPListeners is the total number of HTTP listeners to generate.
-	NumHTTPListeners int
-	// NumTCPListeners is the total number of TCP listeners to generate.
-	// Listeners are assigned clusters in a round-robin fashion.
-	NumTCPListeners int
 	// NumRuntimes is the total number of RTDS layers to generate.
 	NumRuntimes int
-	// TLS enables SDS-enabled TLS mode on all listeners
-	TLS bool
 }
 
 // Generate produces a snapshot from the parameters.
@@ -128,4 +121,29 @@ func (ts TestSnapshot) Generate() cache.Snapshot {
 	)
 
 	return out
+}
+
+// data source configuration
+func configSource(mode string) *corepb.ConfigSource {
+	source := &corepb.ConfigSource{}
+	switch mode {
+	case Ads:
+		source.ConfigSourceSpecifier = &corepb.ConfigSource_Ads{
+			Ads: &corepb.AggregatedConfigSource{},
+		}
+	case Xds:
+		source.ConfigSourceSpecifier = &corepb.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &corepb.ApiConfigSource{
+				ApiType:                   corepb.ApiConfigSource_GRPC,
+				SetNodeOnFirstMessageOnly: true,
+				GrpcServices: []*corepb.GrpcService{{
+					TargetSpecifier: &corepb.GrpcService_EnvoyGrpc_{
+						EnvoyGrpc: &corepb.GrpcService_EnvoyGrpc{ClusterName: XdsCluster},
+					},
+				}},
+			},
+		}
+		return source
+	}
+	return nil
 }

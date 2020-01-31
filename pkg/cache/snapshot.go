@@ -53,12 +53,7 @@ type Snapshot struct {
 }
 
 // NewSnapshot creates a snapshot from response types and a version.
-func NewSnapshot(version string,
-	endpoints []Resource,
-	clusters []Resource,
-	routes []Resource,
-	listeners []Resource,
-	runtimes []Resource) Snapshot {
+func NewSnapshot(version string, endpoints, clusters []Resource) Snapshot {
 	out := Snapshot{}
 	out.Resources[Endpoint] = NewResources(version, endpoints)
 	out.Resources[Cluster] = NewResources(version, clusters)

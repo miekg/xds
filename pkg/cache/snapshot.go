@@ -62,9 +62,6 @@ func NewSnapshot(version string,
 	out := Snapshot{}
 	out.Resources[Endpoint] = NewResources(version, endpoints)
 	out.Resources[Cluster] = NewResources(version, clusters)
-	out.Resources[Route] = NewResources(version, routes)
-	out.Resources[Listener] = NewResources(version, listeners)
-	out.Resources[Runtime] = NewResources(version, runtimes)
 	return out
 }
 
@@ -84,15 +81,7 @@ func (s *Snapshot) Consistent() error {
 	if len(endpoints) != len(s.Resources[Endpoint].Items) {
 		return fmt.Errorf("mismatched endpoint reference and resource lengths: %v != %d", endpoints, len(s.Resources[Endpoint].Items))
 	}
-	if err := superset(endpoints, s.Resources[Endpoint].Items); err != nil {
-		return err
-	}
-
-	routes := GetResourceReferences(s.Resources[Listener].Items)
-	if len(routes) != len(s.Resources[Route].Items) {
-		return fmt.Errorf("mismatched route reference and resource lengths: %v != %d", routes, len(s.Resources[Route].Items))
-	}
-	return superset(routes, s.Resources[Route].Items)
+	return superset(endpoints, s.Resources[Endpoint].Items)
 }
 
 // GetResources selects snapshot resources by type.

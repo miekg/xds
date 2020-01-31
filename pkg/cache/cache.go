@@ -18,7 +18,6 @@ package cache
 import (
 	"context"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 )
 
@@ -60,7 +59,7 @@ type Cache interface {
 // Response is a pre-serialized xDS response.
 type Response struct {
 	// Request is the original request.
-	Request v2.DiscoveryRequest
+	Request *discoverypb.DiscoveryRequest
 
 	// Version of the resources as tracked by the cache for the given type.
 	// Proxy responds with this version as an acknowledgement.

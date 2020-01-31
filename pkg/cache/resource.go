@@ -16,14 +16,9 @@ package cache
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	hcm "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
-	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/conversion"
-	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 )
 
 // Resource is the base interface for the xDS payload.
@@ -37,10 +32,6 @@ const (
 	discoveryTypePrefix = "type.googleapis.com/envoy.service.discovery.v2."
 	EndpointType        = apiTypePrefix + "ClusterLoadAssignment"
 	ClusterType         = apiTypePrefix + "Cluster"
-	RouteType           = apiTypePrefix + "RouteConfiguration"
-	ListenerType        = apiTypePrefix + "Listener"
-	SecretType          = apiTypePrefix + "auth.Secret"
-	RuntimeType         = discoveryTypePrefix + "Runtime"
 
 	// AnyType is used only by ADS
 	AnyType = ""
@@ -52,10 +43,6 @@ type ResponseType int
 const (
 	Endpoint ResponseType = iota
 	Cluster
-	Route
-	Listener
-	Secret
-	Runtime
 	UnknownType // token to count the total number of supported types
 )
 
@@ -66,14 +53,6 @@ func GetResponseType(typeURL string) ResponseType {
 		return Endpoint
 	case ClusterType:
 		return Cluster
-	case RouteType:
-		return Route
-	case ListenerType:
-		return Listener
-	case SecretType:
-		return Secret
-	case RuntimeType:
-		return Runtime
 	}
 	return UnknownType
 }
@@ -81,17 +60,9 @@ func GetResponseType(typeURL string) ResponseType {
 // GetResourceName returns the resource name for a valid xDS response type.
 func GetResourceName(res Resource) string {
 	switch v := res.(type) {
-	case *v2.ClusterLoadAssignment:
+	case *endpointpb.ClusterLoadAssignment:
 		return v.GetClusterName()
-	case *v2.Cluster:
-		return v.GetName()
-	case *v2.RouteConfiguration:
-		return v.GetName()
-	case *v2.Listener:
-		return v.GetName()
-	case *auth.Secret:
-		return v.GetName()
-	case *discovery.Runtime:
+	case *clusterpb.Cluster:
 		return v.GetName()
 	default:
 		return ""
@@ -119,13 +90,13 @@ func GetResourceReferences(resources map[string]Resource) map[string]bool {
 			continue
 		}
 		switch v := res.(type) {
-		case *v2.ClusterLoadAssignment:
+		case *endpointpb.ClusterLoadAssignment:
 			// no dependencies
-		case *v2.Cluster:
+		case *clusterpb.Cluster:
 			// for EDS type, use cluster name or ServiceName override
 			switch typ := v.ClusterDiscoveryType.(type) {
-			case *v2.Cluster_Type:
-				if typ.Type == v2.Cluster_EDS {
+			case *clusterpb.Cluster_Type:
+				if typ.Type == clusterpb.Cluster_EDS {
 					if v.EdsClusterConfig != nil && v.EdsClusterConfig.ServiceName != "" {
 						out[v.EdsClusterConfig.ServiceName] = true
 					} else {
@@ -133,38 +104,6 @@ func GetResourceReferences(resources map[string]Resource) map[string]bool {
 					}
 				}
 			}
-		case *v2.RouteConfiguration:
-			// References to clusters in both routes (and listeners) are not included
-			// in the result, because the clusters are retrieved in bulk currently,
-			// and not by name.
-		case *v2.Listener:
-			// extract route configuration names from HTTP connection manager
-			for _, chain := range v.FilterChains {
-				for _, filter := range chain.Filters {
-					if filter.Name != wellknown.HTTPConnectionManager {
-						continue
-					}
-
-					config := &hcm.HttpConnectionManager{}
-
-					// use typed config if available
-					if typedConfig := filter.GetTypedConfig(); typedConfig != nil {
-						ptypes.UnmarshalAny(typedConfig, config)
-					} else {
-						conversion.StructToMessage(filter.GetConfig(), config)
-					}
-
-					if config == nil {
-						continue
-					}
-
-					if rds, ok := config.RouteSpecifier.(*hcm.HttpConnectionManager_Rds); ok && rds != nil && rds.Rds != nil {
-						out[rds.Rds.RouteConfigName] = true
-					}
-				}
-			}
-		case *discovery.Runtime:
-			// no dependencies
 		}
 	}
 	return out

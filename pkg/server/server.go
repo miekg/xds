@@ -26,8 +26,8 @@ import (
 	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/miekg/xds/pkg/cache"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -53,14 +53,14 @@ type Callbacks interface {
 	OnStreamClosed(int64)
 	// OnStreamRequest is called once a request is received on a stream.
 	// Returning an error will end processing and close the stream. OnStreamClosed will still be called.
-	OnStreamRequest(int64, *xdspb.DiscoveryRequest) error
+	OnStreamRequest(int64, *discoverypb.DiscoveryRequest) error
 	// OnStreamResponse is called immediately prior to sending a response on a stream.
-	OnStreamResponse(int64, *xdspb.DiscoveryRequest, *xdspb.DiscoveryResponse)
+	OnStreamResponse(int64, *discoverypb.DiscoveryRequest, *discoverypb.DiscoveryResponse)
 	// OnFetchRequest is called for each Fetch request. Returning an error will end processing of the
 	// request and respond with an error.
-	OnFetchRequest(context.Context, *xdspb.DiscoveryRequest) error
+	OnFetchRequest(context.Context, *discoverypb.DiscoveryRequest) error
 	// OnFetchResponse is called immediately prior to sending a response.
-	OnFetchResponse(*xdspb.DiscoveryRequest, *xdspb.DiscoveryResponse)
+	OnFetchResponse(*discoverypb.DiscoveryRequest, *discoverypb.DiscoveryResponse)
 }
 
 // NewServer creates handlers from a config watcher and callbacks.

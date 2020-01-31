@@ -16,9 +16,9 @@ func main() {
 			&cli.StringFlag{Name: "s", Usage: "server `ADDRESS` to connect to", Required: true},
 			&cli.StringFlag{Name: "n", Usage: "node `ID` to use", Value: "test-id"},
 			&cli.BoolFlag{Name: "k", Usage: "disable TLS"},
-			&cli.BoolFlag{Name: "H", Usage: "print header in ouput", Value: true},
-			&cli.BoolFlag{Name: "N", Usage: "dry run", Value: false},
-			&cli.BoolFlag{Name: "d", Usage: "dump protocol buffers to standard output", Value: false},
+			&cli.BoolFlag{Name: "H", Usage: "print header in output", Value: true},
+			&cli.BoolFlag{Name: "N", Usage: "dry run"},
+			&cli.BoolFlag{Name: "d", Usage: "dump protocol buffers to standard output"},
 		},
 		// load and locale (currently not set)
 		Commands: []*cli.Command{
@@ -46,19 +46,26 @@ func main() {
 				Name: "undrain",
 				Description: "Undrain sets the endpoint's health to UNKNOWN. If no endpoint is given all endpoints for this cluster will be set.\n" +
 					"   When clusters share endpoints they will get updated as well.",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{Name: "i", Usage: "set endpoint immediately to HEALTHY"},
+				},
 				Category:  "health",
 				Usage:     "set health status to UNKNOWN for endpoints or entire clusters",
 				ArgsUsage: "CLUSTER [ENDPOINT]",
 				Action: func(c *cli.Context) error {
-					err := healthStatus(c, "UNKNOWN")
+					status := "UNKNOWN"
+					if c.Bool("i") {
+						status = "HEALTHY"
+					}
+					err := healthStatus(c, status)
 					return err
 				},
 			},
 			{
 				Name: "health",
 				Description: "Health sets the health for endpoints in a cluster. If no endpoint is given all endpoints for this cluster will be set.\n" +
-					"   The mandatory argument HEALT_STATUS can be: 'UNKNOWN', 'HEALTHY', 'UNHEALTHY', 'DRAINING', 'TIMEOUT' or 'DEGRADED'.\n" +
-					"   When clusters share ednpoint they will get updated as well.",
+					"   The mandatory argument HEALTH_STATUS can be: 'UNKNOWN', 'HEALTHY', 'UNHEALTHY', 'DRAINING', 'TIMEOUT' or 'DEGRADED'.\n" +
+					"   When clusters share endpoint they will get updated as well.",
 				Category:  "health",
 				ArgsUsage: "CLUSTER [ENDPOINT] HEALTH_STATUS",
 				Usage:     "set health status for endpoints or entire clusters",
@@ -101,5 +108,5 @@ func errorf(err error) {
 }
 
 var (
-	ErrArg = func(s []string) error { return fmt.Errorf("parse error with arguments: %v", s) }
+	ErrArg = func(s []string) error { return fmt.Errorf("argument parse error: %v", s) }
 )

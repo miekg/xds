@@ -317,15 +317,15 @@ func (s *server) handler(stream stream, typeURL string) error {
 	return err
 }
 
-func (s *server) StreamAggregatedResources(stream discoverygrpc.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
+func (s *server) StreamAggregatedResources(stream xdspb.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
 	return s.handler(stream, cache.AnyType)
 }
 
-func (s *server) StreamEndpoints(stream v2grpc.EndpointDiscoveryService_StreamEndpointsServer) error {
+func (s *server) StreamEndpoints(stream edspb.EndpointDiscoveryService_StreamEndpointsServer) error {
 	return s.handler(stream, cache.EndpointType)
 }
 
-func (s *server) StreamClusters(stream v2grpc.ClusterDiscoveryService_StreamClustersServer) error {
+func (s *server) StreamClusters(stream cdspb.ClusterDiscoveryService_StreamClustersServer) error {
 	return s.handler(stream, cache.ClusterType)
 }
 
@@ -363,14 +363,14 @@ func (s *server) FetchClusters(ctx context.Context, req *xdspb.DiscoveryRequest)
 	return s.Fetch(ctx, req)
 }
 
-func (s *server) DeltaAggregatedResources(_ discoverygrpc.AggregatedDiscoveryService_DeltaAggregatedResourcesServer) error {
+func (s *server) DeltaAggregatedResources(_ xdspb.AggregatedDiscoveryService_DeltaAggregatedResourcesServer) error {
 	return errors.New("not implemented")
 }
 
-func (s *server) DeltaEndpoints(_ v2grpc.EndpointDiscoveryService_DeltaEndpointsServer) error {
+func (s *server) DeltaEndpoints(_ edspb.EndpointDiscoveryService_DeltaEndpointsServer) error {
 	return errors.New("not implemented")
 }
 
-func (s *server) DeltaClusters(_ v2grpc.ClusterDiscoveryService_DeltaClustersServer) error {
+func (s *server) DeltaClusters(_ cdspb.ClusterDiscoveryService_DeltaClustersServer) error {
 	return errors.New("not implemented")
 }

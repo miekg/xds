@@ -59,7 +59,7 @@ type Cache interface {
 // Response is a pre-serialized xDS response.
 type Response struct {
 	// Request is the original request.
-	Request *discoverypb.DiscoveryRequest
+	Request discoverypb.DiscoveryRequest
 
 	// Version of the resources as tracked by the cache for the given type.
 	// Proxy responds with this version as an acknowledgement.

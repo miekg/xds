@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	cdsURL = "type.googleapis.com/envoy.api.v2.Cluster"
-	edsURL = "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment"
+	cdsURL = "type.googleapis.com/envoy.api.v3.Cluster"
+	edsURL = "type.googleapis.com/envoy.api.v3.ClusterLoadAssignment"
 )
 
 // Client talks to the grpc manager's endpoint.

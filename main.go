@@ -31,29 +31,11 @@ import (
 )
 
 var (
-	debug bool
-
-	delay    time.Duration
-	requests int
-	updates  int
-
-	mode     string
-	clusters int
-	runtimes int
-
-	nodeID string
-	addr   = flag.String("addr", ":18000", "Management server address")
+	mode     = flag.String("xds", resource.Ads, "Management server type (ads, xds, rest)")
+	clusters = flag.Int("clusters", 4, "Number of clusters")
+	nodeID   = flag.String("nodeID", "test-id", "Node ID")
+	addr     = flag.String("addr", ":18000", "Management server address")
 )
-
-func init() {
-	flag.BoolVar(&debug, "debug", false, "Use debug logging")
-	flag.DurationVar(&delay, "delay", 500*time.Millisecond, "Interval between request batch retries")
-	flag.IntVar(&requests, "r", 5, "Number of requests between snapshot updates")
-	flag.IntVar(&updates, "u", 3, "Number of snapshot updates")
-	flag.StringVar(&mode, "xds", resource.Ads, "Management server type (ads, xds, rest)")
-	flag.IntVar(&clusters, "clusters", 4, "Number of clusters")
-	flag.StringVar(&nodeID, "nodeID", "test-id", "Node ID")
-}
 
 // main returns code 1 if any of the batches failed to pass all requests
 func main() {
@@ -63,15 +45,11 @@ func main() {
 	// create a cache
 	signal := make(chan struct{})
 	cb := &callbacks{signal: signal}
-	config := cache.NewSnapshotCache(mode == resource.Ads, cache.IDHash{})
+	config := cache.NewSnapshotCache(*mode == resource.Ads, cache.IDHash{})
 	srv := server.NewServer(context.Background(), config, cb)
 
 	// create a test snapshot
-	snapshots := resource.TestSnapshot{
-		Xds:         mode,
-		NumClusters: clusters,
-		NumRuntimes: runtimes,
-	}
+	snapshots := resource.TestSnapshot{Xds: *mode, NumClusters: *clusters}
 
 	go RunManagementServer(ctx, srv, *addr) // start the xDS server
 
@@ -84,25 +62,21 @@ func main() {
 		os.Exit(1)
 	}
 	log.Printf("initial snapshot %+v\n", snapshots)
-	log.Printf("executing sequence updates=%d request=%d\n", updates, requests)
 
-	for i := 0; i < updates; i++ {
-		if i == 0 {
-			snapshot := snapshots.Generate()
-			if err := snapshot.Consistent(); err != nil {
-				log.Printf("snapshot inconsistency: %+v\n", snapshot)
-			}
+	snapshot := snapshots.Generate()
+	if err := snapshot.Consistent(); err != nil {
+		log.Printf("snapshot inconsistency: %+v\n", snapshot)
+	}
 
-			err := config.SetSnapshot(nodeID, snapshot)
-			if err != nil {
-				log.Printf("snapshot error %q for %+v\n", err, snapshot)
-				os.Exit(1)
-			}
-			snapshots.Version = fmt.Sprintf("v%d", i)
-			log.Printf("update snapshot %v\n", snapshots.Version)
+	err := config.SetSnapshot(*nodeID, snapshot)
+	if err != nil {
+		log.Printf("snapshot error %q for %+v\n", err, snapshot)
+		os.Exit(1)
+	}
+	snapshots.Version = fmt.Sprintf("v%d", 0)
+	log.Printf("update snapshot %v\n", snapshots.Version)
 
-		}
-
+	for {
 		cb.Report()
 		time.Sleep(5 * time.Second)
 	}
@@ -121,15 +95,11 @@ func (cb *callbacks) Report() {
 	log.Printf("server callbacks fetches=%d requests=%d\n", cb.fetches, cb.requests)
 }
 func (cb *callbacks) OnStreamOpen(_ context.Context, id int64, typ string) error {
-	if debug {
-		log.Printf("stream %d open for %s\n", id, typ)
-	}
+	log.Printf("stream %d open for %s\n", id, typ)
 	return nil
 }
 func (cb *callbacks) OnStreamClosed(id int64) {
-	if debug {
-		log.Printf("stream %d closed\n", id)
-	}
+	log.Printf("stream %d closed\n", id)
 }
 func (cb *callbacks) OnStreamRequest(int64, *xdspb.DiscoveryRequest) error {
 	cb.mu.Lock()

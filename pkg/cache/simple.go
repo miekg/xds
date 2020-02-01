@@ -125,6 +125,7 @@ func (cache *snapshotCache) GetSnapshot(node string) (Snapshot, error) {
 	if !ok {
 		return Snapshot{}, fmt.Errorf("no snapshot found for node %s", node)
 	}
+	fmt.Printf("%s\n", snap)
 	return snap, nil
 }
 

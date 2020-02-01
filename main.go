@@ -87,25 +87,25 @@ func main() {
 	log.Printf("executing sequence updates=%d request=%d\n", updates, requests)
 
 	for i := 0; i < updates; i++ {
-		snapshots.Version = fmt.Sprintf("v%d", i)
-		log.Printf("update snapshot %v\n", snapshots.Version)
+		if i == 0 {
+			snapshot := snapshots.Generate()
+			if err := snapshot.Consistent(); err != nil {
+				log.Printf("snapshot inconsistency: %+v\n", snapshot)
+			}
 
-		snapshot := snapshots.Generate()
-		if err := snapshot.Consistent(); err != nil {
-			log.Printf("snapshot inconsistency: %+v\n", snapshot)
-		}
+			err := config.SetSnapshot(nodeID, snapshot)
+			if err != nil {
+				log.Printf("snapshot error %q for %+v\n", err, snapshot)
+				os.Exit(1)
+			}
+			snapshots.Version = fmt.Sprintf("v%d", i)
+			log.Printf("update snapshot %v\n", snapshots.Version)
 
-		err := config.SetSnapshot(nodeID, snapshot)
-		if err != nil {
-			log.Printf("snapshot error %q for %+v\n", err, snapshot)
-			os.Exit(1)
 		}
 
 		cb.Report()
-		time.Sleep(1 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
-
-	log.Printf("Test for %s passed!\n", mode)
 }
 
 type callbacks struct {
@@ -143,6 +143,7 @@ func (cb *callbacks) OnStreamRequest(int64, *xdspb.DiscoveryRequest) error {
 }
 func (cb *callbacks) OnStreamResponse(int64, *xdspb.DiscoveryRequest, *xdspb.DiscoveryResponse) {}
 func (cb *callbacks) OnFetchRequest(_ context.Context, req *xdspb.DiscoveryRequest) error {
+	println("FETCH", req.String())
 	cb.mu.Lock()
 	defer cb.mu.Unlock()
 	cb.fetches++
@@ -152,4 +153,6 @@ func (cb *callbacks) OnFetchRequest(_ context.Context, req *xdspb.DiscoveryReque
 	}
 	return nil
 }
-func (cb *callbacks) OnFetchResponse(*xdspb.DiscoveryRequest, *xdspb.DiscoveryResponse) {}
+func (cb *callbacks) OnFetchResponse(_ *xdspb.DiscoveryRequest, resp *xdspb.DiscoveryResponse) {
+	println("FETCH RESPONSE", resp.String())
+}

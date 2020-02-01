@@ -88,24 +88,12 @@ type stream interface {
 type watches struct {
 	endpoints chan cache.Response
 	clusters  chan cache.Response
-	routes    chan cache.Response
-	listeners chan cache.Response
-	secrets   chan cache.Response
-	runtimes  chan cache.Response
 
 	endpointCancel func()
 	clusterCancel  func()
-	routeCancel    func()
-	listenerCancel func()
-	secretCancel   func()
-	runtimeCancel  func()
 
 	endpointNonce string
 	clusterNonce  string
-	routeNonce    string
-	listenerNonce string
-	secretNonce   string
-	runtimeNonce  string
 }
 
 // Cancel all watches
@@ -115,18 +103,6 @@ func (values watches) Cancel() {
 	}
 	if values.clusterCancel != nil {
 		values.clusterCancel()
-	}
-	if values.routeCancel != nil {
-		values.routeCancel()
-	}
-	if values.listenerCancel != nil {
-		values.listenerCancel()
-	}
-	if values.secretCancel != nil {
-		values.secretCancel()
-	}
-	if values.runtimeCancel != nil {
-		values.runtimeCancel()
 	}
 }
 
@@ -172,6 +148,7 @@ func createResponse(resp *cache.Response, typeURL string) (*xdspb.DiscoveryRespo
 
 // process handles a bi-di stream request
 func (s *server) process(stream stream, reqCh <-chan *xdspb.DiscoveryRequest, defaultTypeURL string) error {
+	println("process")
 	// increment stream count
 	streamID := atomic.AddInt64(&s.streamCount, 1)
 
@@ -304,6 +281,7 @@ func (s *server) handler(stream stream, typeURL string) error {
 				close(reqCh)
 				return
 			}
+			println(req.String())
 			reqCh <- req
 		}
 	}()

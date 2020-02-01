@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -30,6 +31,10 @@ func list(c *cli.Context) error {
 		return nil
 	}
 
+	if c.NArg() > 0 {
+		return listEndpoints(c)
+	}
+
 	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: c.Args().Slice()}
 	cds := cdspb.NewClusterDiscoveryServiceClient(cl.cc)
 	resp, err := cds.FetchClusters(c.Context, dr)
@@ -41,7 +46,7 @@ func list(c *cli.Context) error {
 	for _, r := range resp.GetResources() {
 		var any ptypes.DynamicAny
 		if err := ptypes.UnmarshalAny(r, &any); err != nil {
-			continue
+			return err
 		}
 		if c, ok := any.Message.(*clusterpb.Cluster); !ok {
 			continue
@@ -52,6 +57,8 @@ func list(c *cli.Context) error {
 	if len(clusters) == 0 {
 		return fmt.Errorf("no clusters found")
 	}
+
+	sort.Slice(clusters, func(i, j int) bool { return clusters[i].Name < clusters[j].Name })
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
@@ -87,9 +94,10 @@ func listEndpoints(c *cli.Context) error {
 	for _, r := range resp.GetResources() {
 		var any ptypes.DynamicAny
 		if err := ptypes.UnmarshalAny(r, &any); err != nil {
-			continue
+			return err
 		}
 		if c, ok := any.Message.(*endpointpb.ClusterLoadAssignment); !ok {
+			// log ???
 			continue
 		} else {
 			endpoints = append(endpoints, c)
@@ -99,6 +107,8 @@ func listEndpoints(c *cli.Context) error {
 	if len(endpoints) == 0 {
 		return fmt.Errorf("no endpoints found")
 	}
+
+	sort.Slice(endpoints, func(i, j int) bool { return endpoints[i].ClusterName < endpoints[j].ClusterName })
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()

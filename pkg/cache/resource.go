@@ -27,10 +27,10 @@ type Resource interface {
 
 // Resource types in xDS v2.
 const (
-	apiTypePrefix       = "type.googleapis.com/envoy.api.v3."
+	apiTypePrefix       = "type.googleapis.com/envoy.config."
 	discoveryTypePrefix = "type.googleapis.com/envoy.service.discovery.v3."
-	EndpointType        = apiTypePrefix + "ClusterLoadAssignment"
-	ClusterType         = apiTypePrefix + "Cluster"
+	EndpointType        = apiTypePrefix + "endpoint.v3.ClusterLoadAssignment"
+	ClusterType         = apiTypePrefix + "cluster.v3.Cluster"
 
 	// AnyType is used only by ADS
 	AnyType = ""

@@ -26,8 +26,8 @@ func main() {
 				Name: "ls",
 				Description: "List lists clusters and endpoints of clusters. If no endpoint is given the entire cluster is listed.\n" +
 					"   If no cluster is given, all clusters are shown.",
-				Usage:     "list (all) clusters or single clusters and endpoints",
-				ArgsUsage: "[CLUSTERS [ENDPOINT]]",
+				Usage:     "list (all) clusters or single clusters and its endpoints",
+				ArgsUsage: "[CLUSTER]",
 				Action:    list,
 			},
 			{

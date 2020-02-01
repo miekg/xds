@@ -35,7 +35,7 @@ func list(c *cli.Context) error {
 		return listEndpoints(c)
 	}
 
-	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: c.Args().Slice()}
+	dr := &xdspb.DiscoveryRequest{Node: cl.node}
 	cds := cdspb.NewClusterDiscoveryServiceClient(cl.cc)
 	resp, err := cds.FetchClusters(c.Context, dr)
 	if err != nil {
@@ -83,7 +83,20 @@ func listEndpoints(c *cli.Context) error {
 		return nil
 	}
 
-	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: c.Args().Slice()}
+	args := c.Args().Slice()
+	cluster := ""
+	switch len(args) {
+	default:
+		return ErrArg(args)
+	case 1:
+		cluster = args[0]
+	}
+
+	// We can't use resource names here, because the API then assumes we care about
+	// these and it will have a watch for it; if we then ask again we don't get any replies if
+	// there isn't any updates to the clusters. So keep ResourceNames empty and we filter
+	// down below.
+	dr := &xdspb.DiscoveryRequest{Node: cl.node}
 	eds := edspb.NewEndpointDiscoveryServiceClient(cl.cc)
 	resp, err := eds.FetchEndpoints(c.Context, dr)
 	if err != nil {
@@ -97,9 +110,11 @@ func listEndpoints(c *cli.Context) error {
 			return err
 		}
 		if c, ok := any.Message.(*endpointpb.ClusterLoadAssignment); !ok {
-			// log ???
 			continue
 		} else {
+			if cluster != "" && cluster != c.ClusterName {
+				continue
+			}
 			endpoints = append(endpoints, c)
 
 		}

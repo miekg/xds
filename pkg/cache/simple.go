@@ -269,8 +269,8 @@ func (cache *snapshotCache) Fetch(ctx context.Context, request Request) (*Respon
 		// Respond only if the request version is distinct from the current snapshot state.
 		// It might be beneficial to hold the request since Envoy will re-attempt the refresh.
 		version := snapshot.GetVersion(request.TypeUrl)
-		if request.VersionInfo == version {
-			log.Printf("skip fetch: version up to date")
+		// TODO(miek): changed this
+		if request.VersionInfo == version && version != "" {
 			return nil, &SkipFetchError{}
 		}
 

@@ -128,28 +128,32 @@ func listEndpoints(c *cli.Context) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
 	if c.Bool("H") {
-		fmt.Fprintln(w, "CLUSTER\tENDPOINT\t\tLOCALITY\tSTATUS\tWEIGHT\t")
+		fmt.Fprintln(w, "CLUSTER\tENDPOINT\tLOCALITY\tHEALTH\tWEIGHT\t")
 	}
 	// we'll grab the data per localilty and then graph that. Locality is made up with Region/Zone/Subzone
 	data := [][5]string{} // indexed by localilty and then numerical (0: name, 1: endpoints, 2: locality, 3: status, 4: weight)
 	for _, e := range endpoints {
 		endpoints := []string{}
-		statuses := []string{}
+		healths := []string{}
 		weights := []string{}
 		for _, ep := range e.Endpoints {
 			for _, lb := range ep.GetLbEndpoints() {
 				port := strconv.Itoa(int(lb.GetEndpoint().GetAddress().GetSocketAddress().GetPortValue()))
 				endpoints = append(endpoints, net.JoinHostPort(lb.GetEndpoint().GetAddress().GetSocketAddress().GetAddress(), port))
-				statuses = append(statuses, corepb.HealthStatus_name[int32(lb.GetHealthStatus())])
+				healths = append(healths, corepb.HealthStatus_name[int32(lb.GetHealthStatus())])
 				weight := strconv.Itoa(int(lb.GetLoadBalancingWeight().GetValue()))
 				weights = append(weights, weight)
 			}
 			loc := ep.GetLocality()
+			where := strings.TrimSpace(strings.Join([]string{loc.GetRegion(), loc.GetZone(), loc.GetSubZone()}, " "))
+			if where == "" {
+				where = "UNKNOWN"
+			}
 			data = append(data, [5]string{
 				e.GetClusterName(),
 				strings.Join(endpoints, ","),
-				strings.Join([]string{loc.GetRegion(), loc.GetZone(), loc.GetSubZone()}, " "),
-				strings.Join(statuses, ","),
+				where,
+				strings.Join(healths, ","),
 				strings.Join(weights, ","),
 			})
 		}

@@ -190,6 +190,7 @@ func (s *server) process(stream stream, reqCh <-chan *xdspb.DiscoveryRequest, de
 	// node may only be set on the first discovery request
 	var node = &corepb.Node{}
 
+	println("for select")
 	for {
 		select {
 		case <-s.ctx.Done():

@@ -181,8 +181,11 @@ func (cache *snapshotCache) CreateWatch(request Request) (chan Response, func())
 	snapshot, exists := cache.snapshots[nodeID]
 	version := snapshot.GetVersion(request.TypeUrl)
 
+	// we haven't set our version yet
+	println(exists, request.VersionInfo, version)
+
 	// if the requested version is up-to-date or missing a response, leave an open watch
-	if !exists || request.VersionInfo == version {
+	if !exists || request.VersionInfo == version && version != "" {
 		watchID := cache.nextWatchID()
 		log.Printf("open watch %d for %s%v from nodeID %q, version %q", watchID, request.TypeUrl, request.ResourceNames, nodeID, request.VersionInfo)
 		info.mu.Lock()
@@ -191,6 +194,7 @@ func (cache *snapshotCache) CreateWatch(request Request) (chan Response, func())
 		return value, cache.cancelWatch(nodeID, watchID)
 	}
 
+	println("***** RESPOND")
 	// otherwise, the watch may be responded immediately
 	cache.respond(request, value, snapshot.GetResources(request.TypeUrl), version)
 

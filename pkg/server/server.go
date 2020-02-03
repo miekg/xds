@@ -115,7 +115,13 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 			if err != nil {
 				return err
 			}
-			return send(resp)
+			if resp == nil {
+				continue
+			}
+
+			if err := send(resp); err != nil {
+				return err
+			}
 		}
 	}
 }

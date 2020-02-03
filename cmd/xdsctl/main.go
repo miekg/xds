@@ -23,7 +23,8 @@ func main() {
 		// load and locale (currently not set)
 		Commands: []*cli.Command{
 			{
-				Name: "ls",
+				Name:    "list",
+				Aliases: []string{"ls"},
 				Description: "List lists clusters and endpoints of clusters. If no endpoint is given the entire cluster is listed.\n" +
 					"   If no cluster is given, all clusters are shown.",
 				Usage:     "list (all) clusters or single clusters and its endpoints",

@@ -33,13 +33,13 @@ func healthStatus(c *cli.Context, health string) error {
 	}
 
 	args := c.Args().Slice()
-	if len(args) < 2 || len(args) > 3 {
+	if len(args) < 1 || len(args) > 2 {
 		return ErrArg(args)
 	}
 
 	cluster := args[0]
 	endpoint := ""
-	if len(args) == 3 {
+	if len(args) == 2 {
 		endpoint = args[1]
 	}
 

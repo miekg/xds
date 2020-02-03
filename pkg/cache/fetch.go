@@ -40,7 +40,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		if versionInfo == req.VersionInfo { // client is up to date
-			return nil, SkipFetchError{}
+			return nil, nil
 		}
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: EndpointType}, nil
 
@@ -69,18 +69,9 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		if versionInfo == req.VersionInfo { // client is up to date
-			return nil, SkipFetchError{}
+			return nil, nil
 		}
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: ClusterType}, nil
 	}
 	return nil, fmt.Errorf("unrecognized/unsupported type %q:", req.TypeUrl)
-}
-
-// SkipFetchError is the error returned when the cache fetch is short
-// circuited due to the client's version already being up-to-date.
-type SkipFetchError struct{}
-
-// Error satisfies the error interface
-func (e SkipFetchError) Error() string {
-	return "skip fetch: version up to date"
 }

@@ -28,3 +28,8 @@ Start the server with `xds` and then use the client to connect to it with `xdsct
  *  Any update of the cluster means moving up a version.
 
  *  Do both xDS (fetches) and ADS
+
+ *  When xds starts up, files adhering to this glob "cluster.*.textpb" will be parsed as
+    ClusterLoadAssigment protobuffer in text format. These define the set of cluster we know about.
+    Note: this is in effect the "admin interface", until we figure out how it should look.
+    The wildcard should match the name of cluster being defined in the protobuf.

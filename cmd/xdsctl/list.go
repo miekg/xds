@@ -63,10 +63,10 @@ func list(c *cli.Context) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
 	if c.Bool("H") {
-		fmt.Fprintln(w, "CLUSTER\tTYPE\tMETADATA\t")
+		fmt.Fprintln(w, "CLUSTER\tVERSION\tTYPE\tMETADATA\t")
 	}
 	for _, u := range clusters {
-		fmt.Fprintf(w, "%s\t%s\t%s\t\n", u.GetName(), u.GetType(), strings.Join(metadataToStringSlice(u.GetMetadata()), " "))
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n", u.GetName(), resp.GetVersionInfo(), u.GetType(), strings.Join(metadataToStringSlice(u.GetMetadata()), " "))
 	}
 
 	return nil
@@ -128,7 +128,7 @@ func listEndpoints(c *cli.Context) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
 	if c.Bool("H") {
-		fmt.Fprintln(w, "CLUSTER\tENDPOINT\tLOCALITY\tHEALTH\tWEIGHT\t")
+		fmt.Fprintln(w, "CLUSTER\tVERSION\tENDPOINT\tLOCALITY\tHEALTH\tWEIGHT\t")
 	}
 	// we'll grab the data per localilty and then graph that. Locality is made up with Region/Zone/Subzone
 	data := [][5]string{} // indexed by localilty and then numerical (0: name, 1: endpoints, 2: locality, 3: status, 4: weight)
@@ -161,7 +161,7 @@ func listEndpoints(c *cli.Context) error {
 	}
 	for i := range data {
 		d := data[i]
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t\n", d[0], d[1], d[2], d[3], d[4])
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t\n", d[0], resp.GetVersionInfo(), d[1], d[2], d[3], d[4])
 
 	}
 	return nil

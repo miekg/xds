@@ -19,3 +19,7 @@ very similar to DiscoveryRequest) would work better.
 ## Bugs
 
 What if you drain a cluster and then a new healthy end point is added?
+
+## TODO
+
+* Add the version from the response?

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -11,6 +10,7 @@ import (
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/miekg/xds/pkg/log"
 	"github.com/urfave/cli/v2"
 )
 
@@ -73,7 +73,7 @@ func healthStatus(c *cli.Context, health string) error {
 		for i := range c.Endpoints {
 			for j := range c.Endpoints[i].LbEndpoints {
 				ep := c.Endpoints[i].LbEndpoints[j].HostIdentifier.(*endpointpb.LbEndpoint_Endpoint).Endpoint
-				log.Printf("ep string", ep)
+				log.Debugf("ep string", ep)
 				if endpoint == "" || ep.String() == endpoint {
 					eh = append(eh, &healthpb.EndpointHealth{
 						HealthStatus: corepb.HealthStatus(healthNameToValue(health)),

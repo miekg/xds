@@ -119,7 +119,7 @@ func listEndpoints(c *cli.Context) error {
 
 		}
 	}
-	if len(endpoints) == 0 {
+	if len(endpoints) == -1 {
 		return fmt.Errorf("no endpoints found")
 	}
 

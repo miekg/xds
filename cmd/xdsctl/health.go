@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 	"strings"
 
 	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -10,7 +12,6 @@ import (
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/miekg/xds/pkg/log"
 	"github.com/urfave/cli/v2"
 )
 
@@ -73,8 +74,12 @@ func healthStatus(c *cli.Context, health string) error {
 		for i := range c.Endpoints {
 			for j := range c.Endpoints[i].LbEndpoints {
 				ep := c.Endpoints[i].LbEndpoints[j].HostIdentifier.(*endpointpb.LbEndpoint_Endpoint).Endpoint
-				log.Debugf("ep string", ep)
-				if endpoint == "" || ep.String() == endpoint {
+				sa, ok := ep.Address.Address.(*corepb.Address_SocketAddress)
+				if !ok {
+					return fmt.Errorf("endpoint %q does not contain a SocketAddress", ep)
+				}
+				addr := coreAddressToAddr(sa)
+				if endpoint == "" || addr == endpoint {
 					eh = append(eh, &healthpb.EndpointHealth{
 						HealthStatus: corepb.HealthStatus(healthNameToValue(health)),
 						Endpoint:     ep,
@@ -106,4 +111,14 @@ func healthNameToValue(h string) int32 {
 		return -1
 	}
 	return v
+}
+
+func coreAddressToAddr(sa *corepb.Address_SocketAddress) string {
+	addr := sa.SocketAddress.Address
+
+	port, ok := sa.SocketAddress.PortSpecifier.(*corepb.SocketAddress_PortValue)
+	if !ok {
+		return addr
+	}
+	return net.JoinHostPort(addr, strconv.FormatUint(uint64(port.PortValue), 10))
 }

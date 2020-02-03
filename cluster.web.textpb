@@ -23,7 +23,7 @@ endpoints: <
     endpoint: <
       address: <
         socket_address: <
-          address: "127.0.1.1"
+          address: "127.0.1.2"
           port_value: 18008
         >
       >
@@ -39,7 +39,7 @@ endpoints: <
     endpoint: <
       address: <
         socket_address: <
-          address: "127.0.1.1"
+          address: "127.0.2.1"
           port_value: 18008
         >
       >

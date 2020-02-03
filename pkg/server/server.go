@@ -26,6 +26,7 @@ import (
 	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
+	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
 	"github.com/miekg/xds/pkg/cache"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -37,8 +38,9 @@ type Server interface {
 	edspb.EndpointDiscoveryServiceServer
 	cdspb.ClusterDiscoveryServiceServer
 	discoverypb.AggregatedDiscoveryServiceServer
+	healthpb.HealthDiscoveryServiceServer
 
-	// Fetch is the universal fetch method.
+	// Fetch is the universal fetch method for discovery requests
 	Fetch(context.Context, *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error)
 }
 
@@ -56,16 +58,15 @@ type server struct {
 	streamCount int64
 }
 
-type stream interface {
+type discoveryStream interface {
 	grpc.ServerStream
 
 	Send(*xdspb.DiscoveryResponse) error
 	Recv() (*xdspb.DiscoveryRequest, error)
 }
 
-// process handles a bi-di stream request
-func (s *server) process(stream stream, reqCh <-chan *xdspb.DiscoveryRequest, defaultTypeURL string) error {
-	println("proceSS")
+// discoveryProcess handles a bi-di stream request.
+func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.DiscoveryRequest, defaultTypeURL string) error {
 	// unique nonce generator for req-resp pairs per xDS stream; the server
 	// ignores stale nonces. nonce is only modified within send() function.
 	var streamNonce int64
@@ -119,8 +120,8 @@ func (s *server) process(stream stream, reqCh <-chan *xdspb.DiscoveryRequest, de
 	}
 }
 
-// handler converts a blocking read call to channels and initiates stream processing
-func (s *server) handler(stream stream, typeURL string) error {
+// discoveryHandler converts a blocking read call to channels and initiates stream processing
+func (s *server) discoveryHandler(stream discoveryStream, typeURL string) error {
 	// a channel for receiving incoming requests
 	reqCh := make(chan *xdspb.DiscoveryRequest)
 	reqStop := int32(0)
@@ -138,29 +139,28 @@ func (s *server) handler(stream stream, typeURL string) error {
 		}
 	}()
 
-	err := s.process(stream, reqCh, typeURL)
-
-	// prevents writing to a closed channel if send failed on blocked recv
-	// TODO(kuat) figure out how to unblock recv through gRPC API
+	err := s.discoveryProcess(stream, reqCh, typeURL)
 	atomic.StoreInt32(&reqStop, 1)
-
 	return err
 }
 
 func (s *server) StreamAggregatedResources(stream xdspb.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
-	return s.handler(stream, cache.AnyType)
+	// health checks
+	return s.discoveryHandler(stream, cache.AnyType)
 }
 
 func (s *server) StreamEndpoints(stream edspb.EndpointDiscoveryService_StreamEndpointsServer) error {
-	return s.handler(stream, cache.EndpointType)
+	return s.discoveryHandler(stream, cache.EndpointType)
 }
 
 func (s *server) StreamClusters(stream cdspb.ClusterDiscoveryService_StreamClustersServer) error {
-	return s.handler(stream, cache.ClusterType)
+	return s.discoveryHandler(stream, cache.ClusterType)
 }
 
 // Fetch is the universal fetch method.
 func (s *server) Fetch(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
+	// This could be extended further for health checks, but health checks write, so this may all be too
+	// different.
 	resp, err := s.cache.Fetch(req)
 	return resp, err
 }
@@ -169,6 +169,7 @@ func (s *server) FetchClusters(ctx context.Context, req *xdspb.DiscoveryRequest)
 	req.TypeUrl = cache.ClusterType
 	return s.Fetch(ctx, req)
 }
+
 func (s *server) FetchEndpoints(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
 	req.TypeUrl = cache.EndpointType
 	return s.Fetch(ctx, req)

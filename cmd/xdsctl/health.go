@@ -33,13 +33,13 @@ func healthStatus(c *cli.Context, health string) error {
 	}
 
 	args := c.Args().Slice()
-	if len(args) < 1 || len(args) > 2 {
+	if len(args) < 1 || len(args) > 3 {
 		return ErrArg(args)
 	}
 
 	cluster := args[0]
 	endpoint := ""
-	if len(args) == 2 {
+	if len(args) >= 2 {
 		endpoint = args[1]
 	}
 
@@ -101,7 +101,6 @@ func healthStatus(c *cli.Context, health string) error {
 	}
 	hds := healthpb.NewHealthDiscoveryServiceClient(cl.cc)
 	_, err = hds.FetchHealthCheck(c.Context, hr)
-	// TODO(miek): do something with response?
 	return err
 }
 

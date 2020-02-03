@@ -133,10 +133,10 @@ func listEndpoints(c *cli.Context) error {
 	// we'll grab the data per localilty and then graph that. Locality is made up with Region/Zone/Subzone
 	data := [][5]string{} // indexed by localilty and then numerical (0: name, 1: endpoints, 2: locality, 3: status, 4: weight)
 	for _, e := range endpoints {
-		endpoints := []string{}
-		healths := []string{}
-		weights := []string{}
 		for _, ep := range e.Endpoints {
+			endpoints := []string{}
+			healths := []string{}
+			weights := []string{}
 			for _, lb := range ep.GetLbEndpoints() {
 				port := strconv.Itoa(int(lb.GetEndpoint().GetAddress().GetSocketAddress().GetPortValue()))
 				endpoints = append(endpoints, net.JoinHostPort(lb.GetEndpoint().GetAddress().GetSocketAddress().GetAddress(), port))

@@ -19,7 +19,7 @@ Start the server with `xds` and then use the client to connect to it with `xdsct
 
 ## xds
 
- *  Add clusters via a text protobuf on startup, after reading this in the version will be set to
+ *  Adds clusters via a text protobuf on startup, after reading this in the version will be set to
  *  v1.
 
  *  Allow xdsctl to set weights/statuses, up the version, etc. Note that weight updates don't have a

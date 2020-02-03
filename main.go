@@ -18,9 +18,10 @@ package main
 import (
 	"context"
 	"flag"
-	"time"
+	"os"
+	"os/signal"
 
-	"github.com/miekg/xds/pkg/cache2"
+	"github.com/miekg/xds/pkg/cache"
 	"github.com/miekg/xds/pkg/log"
 	"github.com/miekg/xds/pkg/server"
 )
@@ -38,24 +39,26 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Infof("Parsed %d clusters from directory %q", len(clusters), *conf)
-
 	// create a cache
-	config := cache2.New()
+	config := cache.New()
 	for _, cla := range clusters {
 		config.Insert(cla)
 	}
-	log.Info("Initialized cache with 'v1' of cluster info")
+	log.Infof("Initialized cache with 'v1' of %d cluster parsed from directory: %q", len(clusters), *conf)
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	srv := server.NewServer(ctx, config)
 	go RunManagementServer(ctx, srv, *addr) // start the xDS server
 
+	sig := make(chan os.Signal)
+	signal.Notify(sig, os.Interrupt)
+
 	for {
-		log.Info("Still alive")
-		time.Sleep(5 * time.Second)
+		select {
+		case <-sig:
+			cancel()
+			os.Exit(1)
+		}
 	}
-	// ^c handling: TODO
-	cancel()
 }

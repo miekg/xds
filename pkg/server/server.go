@@ -27,7 +27,6 @@ import (
 	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	"github.com/miekg/xds/pkg/cache"
-	"github.com/miekg/xds/pkg/cache2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -44,12 +43,12 @@ type Server interface {
 }
 
 // NewServer creates handlers from a config watcher and callbacks.
-func NewServer(ctx context.Context, config cache2.Cluster) Server {
+func NewServer(ctx context.Context, config *cache.Cluster) Server {
 	return &server{cache: config, ctx: ctx}
 }
 
 type server struct {
-	cache cache2.Cluster
+	cache *cache.Cluster
 
 	ctx context.Context
 
@@ -66,6 +65,7 @@ type stream interface {
 
 // process handles a bi-di stream request
 func (s *server) process(stream stream, reqCh <-chan *xdspb.DiscoveryRequest, defaultTypeURL string) error {
+	println("proceSS")
 	// unique nonce generator for req-resp pairs per xDS stream; the server
 	// ignores stale nonces. nonce is only modified within send() function.
 	var streamNonce int64
@@ -166,9 +166,11 @@ func (s *server) Fetch(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb
 }
 
 func (s *server) FetchClusters(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
+	req.TypeUrl = cache.ClusterType
 	return s.Fetch(ctx, req)
 }
 func (s *server) FetchEndpoints(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
+	req.TypeUrl = cache.EndpointType
 	return s.Fetch(ctx, req)
 }
 

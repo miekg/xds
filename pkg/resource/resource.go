@@ -19,6 +19,7 @@ import (
 	"time"
 
 	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	"github.com/golang/protobuf/ptypes"
 )
 
@@ -28,6 +29,12 @@ func MakeCluster(name string) *clusterpb.Cluster {
 		Name:                 name,
 		ConnectTimeout:       ptypes.DurationProto(5 * time.Second),
 		ClusterDiscoveryType: &clusterpb.Cluster_Type{Type: clusterpb.Cluster_EDS},
-		EdsClusterConfig:     &clusterpb.Cluster_EdsClusterConfig{},
+		EdsClusterConfig: &clusterpb.Cluster_EdsClusterConfig{
+			EdsConfig: &corepb.ConfigSource{
+				ConfigSourceSpecifier: &corepb.ConfigSource_Ads{
+					Ads: &corepb.AggregatedConfigSource{},
+				},
+			},
+		},
 	}
 }

@@ -40,6 +40,8 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		if versionInfo == req.VersionInfo { // client is up to date
+			// debug
+			println("VERSION UP TO DATE")
 			return nil, nil
 		}
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
@@ -69,6 +71,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		if versionInfo == req.VersionInfo { // client is up to date
+			println("CLUSTER VERSION UP TO DATE")
 			return nil, nil
 		}
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil

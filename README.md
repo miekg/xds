@@ -42,3 +42,7 @@ Both xDS and ADS are implemented by `xds`.
 
 What if you drain a cluster and then a new healthy end point is added? This new endpoint will get
 health checked and possiby be set health, meaning *all* traffic will flow to this one endpoint.
+
+## TODO
+
+* new clusters - send updates with ADS ? Double check with Envoy

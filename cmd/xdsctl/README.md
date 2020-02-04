@@ -16,10 +16,4 @@ that I need to implement this; this can be worked around by using CDS and or EDS
 "discovery response" that's seen as a cue to add or remove. However distinct protos (which could be
 very similar to DiscoveryRequest) would work better.
 
-## Bugs
-
-What if you drain a cluster and then a new healthy end point is added?
-
-## TODO
-
-* Add the version from the response?
+Implemented are: listing clusters and endpoints and setting health for clusters and endpoints.

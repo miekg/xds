@@ -76,7 +76,7 @@ func main() {
 				Name:        "weight",
 				Description: "Weight sets the endpoint's weight.",
 				Usage:       "set endpoint's weight in a cluster",
-				ArgsUsage:   "CLUSTER ENDPOINT",
+				ArgsUsage:   "CLUSTER ENDPOINT WEIGHT",
 				Action:      weight,
 			},
 			{
@@ -88,7 +88,8 @@ func main() {
 				Action:      add,
 			},
 			{
-				Name:        "rm",
+				Name:        "remove",
+				Aliases:     []string{"rm"},
 				Description: "Remove removes clusters and endpoints. If no endpoint is given the entire cluster is removed.",
 				Category:    "admin",
 				Usage:       "remove  a cluster or remove a cluster and endpoint",

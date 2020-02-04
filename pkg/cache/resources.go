@@ -5,12 +5,14 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-// Resource types in xDS v3.
+// Resource types in xDS v3 (guessing here) and v2
 const (
-	discoveryTypePrefix = "type.googleapis.com/envoy.service.discovery.v3."
-	apiTypePrefix       = "type.googleapis.com/envoy.config."
-	EndpointType        = apiTypePrefix + "endpoint.v3.ClusterLoadAssignment"
-	ClusterType         = apiTypePrefix + "cluster.v3.Cluster"
+	apiTypePrefix = "type.googleapis.com/envoy.config."
+	EndpointType  = apiTypePrefix + "endpoint.v3.ClusterLoadAssignment"
+	ClusterType   = apiTypePrefix + "cluster.v3.Cluster"
+
+	ClusterType2  = "type.googleapis.com/envoy.api.v2.Cluster"
+	EndpointType2 = "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment"
 
 	// AnyType is used only by ADS
 	AnyType = ""

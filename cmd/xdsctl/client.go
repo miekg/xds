@@ -9,11 +9,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	cdsURL = "type.googleapis.com/envoy.api.v3.Cluster"
-	edsURL = "type.googleapis.com/envoy.api.v3.ClusterLoadAssignment"
-)
-
 // Client talks to the grpc manager's endpoint.
 type Client struct {
 	cc   *grpc.ClientConn

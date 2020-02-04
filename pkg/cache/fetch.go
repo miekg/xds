@@ -42,7 +42,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		if versionInfo == req.VersionInfo { // client is up to date
 			return nil, nil
 		}
-		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: EndpointType}, nil
+		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 
 	case ClusterType:
 		sort.Strings(req.ResourceNames)
@@ -71,7 +71,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		if versionInfo == req.VersionInfo { // client is up to date
 			return nil, nil
 		}
-		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: ClusterType}, nil
+		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 	}
 	return nil, fmt.Errorf("unrecognized/unsupported type %q:", req.TypeUrl)
 }

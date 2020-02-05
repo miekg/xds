@@ -4,7 +4,7 @@ xDS is Envoy's discovery protocol. This repo contains xDS related utilities - in
 
  *  xdsctl - cli to manipulate and list health and weight of endpoints and clusters.
 
- *  xds - management daemon that caches endpoints and clusters.
+ *  xds - management daemon that caches endpoints and clusters and hands them out using xDS and ADS.
 
 TLS is not implemented (yet). Note that this implements the v3 xDS API, Envoy works with this API as
 well.
@@ -27,12 +27,14 @@ Start the server with `xds` and then use the client to connect to it with `xdsct
 to use on startup.
 
 Both xDS and ADS are implemented by `xds`. For xDS we force the types to the v3 protos. For ADS (and
-to make Envoy happy we support both).
+to make Envoy happy we support also v2 - this may not be interely up to specification though).
 
 The `envoy-bootstrap.yaml` can be used to point Envoy to the xds control plane - note this only
-gives envoy CDS/EDS responses (via ADS), so no listeners and or routes.
+gives envoy CDS/EDS responses (via ADS), so no listeners and or routes. Envoy can be downloaded from
+<https://tetrate.bintray.com/getenvoy/>.
 
-Envoy can be downloaded from <https://tetrate.bintray.com/getenvoy/>.
+CoreDNS (with the *traffic* plugin compiled in), can be start with the Corefile specified to get DNS
+responses out of xds. CoreDNS can be found at <https://coredns.io>
 
 ## xds
 
@@ -47,4 +49,4 @@ Envoy can be downloaded from <https://tetrate.bintray.com/getenvoy/>.
 ## Bugs
 
 What if you drain a cluster and then a new healthy end point is added? This new endpoint will get
-health checked and possiby be set health, meaning *all* traffic will flow to this one endpoint.
+health checked and possibly be set health, meaning *all* traffic will flow to this one endpoint.

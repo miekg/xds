@@ -11,7 +11,7 @@ dynamic_resources:
     resource_api_version: v3
 node:
   cluster: test-cluster
-  id: test-id
+  id: envoy
 static_resources:
   clusters:
   - connect_timeout: 1s

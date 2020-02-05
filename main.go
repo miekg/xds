@@ -77,7 +77,6 @@ func rereadConfig(config *cache.Cluster, path string, stop <-chan bool) {
 			for _, c := range clusters {
 				i := sort.Search(len(current), func(i int) bool { return c.ClusterName <= current[i] })
 				if i < len(current) && current[i] == c.ClusterName {
-					println("hit", c.ClusterName)
 					continue
 				}
 				// new cluster

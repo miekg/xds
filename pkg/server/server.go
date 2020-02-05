@@ -144,7 +144,29 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 			if apiVersion == 0 {
 				log.Warningf("No API version seen from node with ID %s, defaulting to 2", node.Id)
 			}
-			req := &xdspb.DiscoveryRequest{} // no ResourceNames, so get them all
+			req := &xdspb.DiscoveryRequest{}
+
+			// CDS
+
+			req.VersionInfo = versionInfo[resource.ClusterType3]
+			req.TypeUrl = resource.ClusterType3
+			resp, err := s.cache.Fetch(req)
+			if err != nil {
+				return err
+			}
+			if resp.VersionInfo == versionInfo[req.TypeUrl] {
+				log.Debugf("Update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+				continue
+			}
+
+			if err := send(resp); err != nil {
+				return err
+			}
+			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
+			log.Infof("Updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+
+			// EDS
+
 			// depending on the version we need to look at different strings
 			req.VersionInfo = versionInfo[resource.EndpointType3]
 			req.TypeUrl = resource.EndpointType3
@@ -153,7 +175,7 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 				req.TypeUrl = resource.EndpointType
 			}
 
-			resp, err := s.cache.Fetch(req)
+			resp, err = s.cache.Fetch(req)
 			if err != nil {
 				return err
 			}

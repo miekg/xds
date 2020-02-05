@@ -1,0 +1,5 @@
+lb.example.org {
+    traffic grpc://127.0.0.1:18000
+    debug
+    log
+}

@@ -24,7 +24,8 @@ Build the server and clients:
 
 Start the server with `xds` and then use the client to connect to it with `xdsctl -k -s
 127.0.0.1:18000 ls`. When starting up `xds` will read files `cluster.*.textpb` that contain clusters
-to use on startup.
+to use. This will continue during the runtime of the process; new clusters - if found - will be
+added. Removal is not implemented (yet).
 
 Both xDS and ADS are implemented by `xds`. For xDS we force the types to the v3 protos. For ADS (and
 to make Envoy happy we support also v2 - this may not be interely up to specification though).

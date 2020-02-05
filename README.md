@@ -6,11 +6,10 @@ xDS is Envoy's discovery protocol. This repo contains xDS related utilities - in
 
  *  xds - management daemon that caches endpoints and clusters.
 
-TLS is not implemented.
+TLS is not implemented (yet).
 
-Note that this implements the v3 xDS API, but at the time (Jan 2020) that was still in development,
-so it may deviate from the final version. If so, it is expected this repo will change to reflect to
-actual, implemented v3 API.
+Note that this implements the v3 xDS API, Envoy works with this API as well. There is an admin
+interface specified, that uses the same protobufs (DiscoveryResponse) on a different endpoint.
 
 ## Trying out
 
@@ -46,3 +45,11 @@ health checked and possiby be set health, meaning *all* traffic will flow to thi
 ## TODO
 
 * new clusters - send updates with ADS ? Double check with Envoy
+
+## Protocol Notes
+
+per stream (node-id) need to keep track of this: or do this by default:
+
+  Note that once a stream has entered wildcard mode for a given resource type, there is no way to
+  change the stream out of wildcard mode; resource names specified in any subsequent request on the
+  stream will be ignored.

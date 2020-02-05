@@ -141,7 +141,6 @@ func (s *server) discoveryHandler(stream discoveryStream, typeURL string) error 
 				close(reqCh)
 				return
 			}
-			println("got one", req.String())
 			reqCh <- req
 		}
 	}()
@@ -157,6 +156,7 @@ func (s *server) StreamAggregatedResources(stream xdspb.AggregatedDiscoveryServi
 }
 
 func (s *server) StreamEndpoints(stream edspb.EndpointDiscoveryService_StreamEndpointsServer) error {
+	// Change this as well.
 	return s.discoveryHandler(stream, cache.EndpointType)
 }
 

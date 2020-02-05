@@ -36,7 +36,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			if err != nil {
 				return nil, err
 			}
-			resources = append(resources, &any.Any{TypeUrl: EndpointType, Value: data})
+			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		if versionInfo == req.VersionInfo { // client is up to date
@@ -46,7 +46,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 
-	case ClusterType:
+	case ClusterType, ClusterType2:
 		sort.Strings(req.ResourceNames)
 		clusters := req.ResourceNames
 		if len(req.ResourceNames) == 0 {
@@ -67,7 +67,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			if err != nil {
 				return nil, err
 			}
-			resources = append(resources, &any.Any{TypeUrl: ClusterType, Value: data})
+			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		if versionInfo == req.VersionInfo { // client is up to date

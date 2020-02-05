@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	_ "github.com/envoyproxy/go-control-plane/envoy/api/v2" // for v2.ClusterLoadAssignment
 	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"

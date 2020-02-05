@@ -20,6 +20,7 @@ import (
 	"errors"
 	"strconv"
 	"sync/atomic"
+	"time"
 
 	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	cdspb "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
@@ -28,6 +29,8 @@ import (
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
 	"github.com/miekg/xds/pkg/cache"
+	"github.com/miekg/xds/pkg/log"
+	"github.com/miekg/xds/pkg/resource"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -77,8 +80,13 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 		return stream.Send(resp)
 	}
 
-	// node may only be set on the first discovery request
-	var node = &corepb.Node{}
+	tick := time.NewTicker(10 * time.Second) // every 10s we send updates (if there are any to this client).
+	defer tick.Stop()
+
+	var (
+		node        = &corepb.Node{}
+		versionInfo = ""
+	)
 
 	for {
 		select {
@@ -99,11 +107,8 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 				req.Node = node
 			}
 
-			// TODO, nonce checking
-			// nonce := req.GetResponseNonce()
-
 			// type URL is required for ADS but is implicit for xDS
-			if defaultTypeURL == cache.AnyType {
+			if defaultTypeURL == resource.AnyType {
 				if req.TypeUrl == "" {
 					return status.Errorf(codes.InvalidArgument, "type URL is required for ADS")
 				}
@@ -115,13 +120,35 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 			if err != nil {
 				return err
 			}
-			if resp == nil {
+			if resp.VersionInfo == versionInfo {
+				log.Infof("Update node with ID %q not needed version up to date: %s", node.Id, versionInfo)
 				continue
 			}
 
 			if err := send(resp); err != nil {
 				return err
 			}
+			versionInfo = resp.GetVersionInfo()
+
+		case <-tick.C:
+			req := &xdspb.DiscoveryRequest{} // no ResourceNames, so get them all
+			req.TypeUrl = resource.EndpointType
+			req.VersionInfo = versionInfo
+
+			resp, err := s.cache.Fetch(req)
+			if err != nil {
+				return err
+			}
+			if resp.VersionInfo == versionInfo {
+				log.Infof("Update node with ID %q not needed version up to date: %s", node.Id, versionInfo)
+				continue
+			}
+
+			if err := send(resp); err != nil {
+				return err
+			}
+			versionInfo = resp.GetVersionInfo()
+			log.Infof("Updated node with ID %q with version: %s", node.Id, versionInfo)
 		}
 	}
 }
@@ -151,34 +178,31 @@ func (s *server) discoveryHandler(stream discoveryStream, typeURL string) error 
 }
 
 func (s *server) StreamAggregatedResources(stream xdspb.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
-	// health checks
-	return s.discoveryHandler(stream, cache.AnyType)
+	return s.discoveryHandler(stream, resource.AnyType)
 }
 
 func (s *server) StreamEndpoints(stream edspb.EndpointDiscoveryService_StreamEndpointsServer) error {
-	// Change this as well.
-	return s.discoveryHandler(stream, cache.EndpointType)
+	return s.discoveryHandler(stream, resource.EndpointType)
 }
 
 func (s *server) StreamClusters(stream cdspb.ClusterDiscoveryService_StreamClustersServer) error {
-	return s.discoveryHandler(stream, cache.ClusterType)
+	return s.discoveryHandler(stream, resource.ClusterType)
 }
 
 // Fetch is the universal fetch method.
 func (s *server) Fetch(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
-	// This could be extended further for health checks, but health checks write, so this may all be too
-	// different.
 	resp, err := s.cache.Fetch(req)
 	return resp, err
 }
 
 func (s *server) FetchClusters(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
-	req.TypeUrl = cache.ClusterType
+	// For xDS we use the v3 types.
+	req.TypeUrl = resource.ClusterType3
 	return s.Fetch(ctx, req)
 }
 
 func (s *server) FetchEndpoints(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
-	req.TypeUrl = cache.EndpointType
+	req.TypeUrl = resource.EndpointType3
 	return s.Fetch(ctx, req)
 }
 

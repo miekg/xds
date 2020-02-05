@@ -26,16 +26,18 @@ Start the server with `xds` and then use the client to connect to it with `xdsct
 127.0.0.1:18000 ls`. When starting up `xds` will read files `cluster.*.textpb` that contain clusters
 to use on startup.
 
-Both xDS and ADS are implemented by `xds`.
+Both xDS and ADS are implemented by `xds`. For xDS we force the types to the v3 protos. For ADS (and
+to make Envoy happy we support both).
+
+The `envoy-bootstrap.yaml` can be used to point Envoy to the xds control plane - note this only
+gives envoy CDS/EDS responses (via ADS), so no listeners and or routes.
+
+Envoy can be downloaded from <https://tetrate.bintray.com/getenvoy/>.
 
 ## xds
 
  *  Adds clusters via a text protobuf on startup, after reading this in the version will be set to
-
- *  v1 for those.
-
- *  Allow xdsctl to set weights/statuses, up the version, etc. Some things have not been implemented
-    yet, mostly because no protocol has been defined yet (i.e weights).
+    v1 for those.
 
  *  When xds starts up, files adhering to this glob "cluster.*.textpb" will be parsed as
     ClusterLoadAssigment protobuffer in text format. These define the set of cluster we know about.
@@ -46,15 +48,3 @@ Both xDS and ADS are implemented by `xds`.
 
 What if you drain a cluster and then a new healthy end point is added? This new endpoint will get
 health checked and possiby be set health, meaning *all* traffic will flow to this one endpoint.
-
-## TODO
-
- *  new clusters - send updates with ADS ? Double check with Envoy
-
-## Protocol Notes
-
-per stream (node-id) need to keep track of this: or do this by default:
-
-Note that once a stream has entered wildcard mode for a given resource type, there is no way to
-change the stream out of wildcard mode; resource names specified in any subsequent request on the
-stream will be ignored.

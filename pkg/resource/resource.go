@@ -23,6 +23,18 @@ import (
 	"github.com/golang/protobuf/ptypes"
 )
 
+// Resource types in xDS.
+const (
+	ClusterType  = "type.googleapis.com/envoy.api.v2.Cluster"
+	EndpointType = "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment"
+
+	ClusterType3  = "type.googleapis.com/envoy.config.cluster.v3.Cluster"
+	EndpointType3 = "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment"
+
+	// AnyType is used only by ADS
+	AnyType = ""
+)
+
 // MakeCluster create a clusterpb.Cluster.
 func MakeCluster(name string) *clusterpb.Cluster {
 	return &clusterpb.Cluster{

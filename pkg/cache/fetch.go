@@ -17,7 +17,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 	var resources []*any.Any
 
 	switch req.TypeUrl {
-	case EndpointType:
+	case resource.EndpointType, resource.EndpointType3:
 		sort.Strings(req.ResourceNames)
 		clusters := req.ResourceNames
 		if len(req.ResourceNames) == 0 {
@@ -39,14 +39,9 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
-		if versionInfo == req.VersionInfo { // client is up to date
-			// debug
-			println("VERSION UP TO DATE")
-			return nil, nil
-		}
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 
-	case ClusterType, ClusterType2:
+	case resource.ClusterType, resource.ClusterType3:
 		sort.Strings(req.ResourceNames)
 		clusters := req.ResourceNames
 		if len(req.ResourceNames) == 0 {
@@ -70,10 +65,6 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
-		if versionInfo == req.VersionInfo { // client is up to date
-			println("CLUSTER VERSION UP TO DATE")
-			return nil, nil
-		}
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 	}
 	return nil, fmt.Errorf("unrecognized/unsupported type %q:", req.TypeUrl)

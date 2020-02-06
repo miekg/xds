@@ -2,9 +2,9 @@
 
 xDS is Envoy's discovery protocol. This repo contains xDS related utilities - included are:
 
- *  xdsctl - cli to manipulate and list health and weight of endpoints and clusters.
-
  *  xds - management daemon that caches endpoints and clusters and hands them out using xDS and ADS.
+
+ *  xdsctl - cli to manipulate and list health and weight of endpoints and clusters.
 
 TLS is not implemented (yet). Note that this implements the v3 xDS API, Envoy works with this API as
 well.
@@ -28,14 +28,14 @@ to use. This will continue during the runtime of the process; new clusters - if 
 added. Removal is not implemented (yet).
 
 Both xDS and ADS are implemented by `xds`. For xDS we force the types to the v3 protos. For ADS (and
-to make Envoy happy we support also v2 - this may not be interely up to specification though).
+to make Envoy happy) we support also v2 - this may not be interely up to specification though).
 
 The `envoy-bootstrap.yaml` can be used to point Envoy to the xds control plane - note this only
-gives envoy CDS/EDS responses (via ADS), so no listeners and or routes. Envoy can be downloaded from
+gives envoy CDS/EDS responses (via ADS), so no listeners nor routes. Envoy can be downloaded from
 <https://tetrate.bintray.com/getenvoy/>.
 
-CoreDNS (with the *traffic* plugin compiled in), can be start with the Corefile specified to get DNS
-responses out of xds. CoreDNS can be found at <https://coredns.io>
+CoreDNS (with the *traffic* plugin compiled in), can be started with the Corefile specified to get
+DNS responses out of xds. CoreDNS can be found at <https://coredns.io>
 
 ## xds
 
@@ -46,6 +46,8 @@ responses out of xds. CoreDNS can be found at <https://coredns.io>
     ClusterLoadAssigment protobuffer in text format. These define the set of cluster we know about.
     Note: this is in effect the "admin interface", until we figure out how it should look. The
     wildcard should match the name of cluster being defined in the protobuf.
+
+See cmd/xdsctl/README.md for how to use the CLI.
 
 ## Bugs
 

@@ -7,8 +7,8 @@ endpoints: <
     endpoint: <
       address: <
         socket_address: <
-          address: "127.0.1.1"
-          port_value: 18008
+          address: "192.168.1.1"
+          port_value: 80
         >
       >
     >
@@ -23,8 +23,8 @@ endpoints: <
     endpoint: <
       address: <
         socket_address: <
-          address: "127.0.1.2"
-          port_value: 18008
+          address: "192.168.1.2"
+          port_value: 80
         >
       >
     >
@@ -39,8 +39,24 @@ endpoints: <
     endpoint: <
       address: <
         socket_address: <
-          address: "127.0.2.1"
-          port_value: 18008
+          address: "172.16.0.1"
+          port_value: 80
+        >
+      >
+    >
+    health_status: HEALTHY
+  >
+>
+endpoints: <
+  locality: <
+    region: "eu"
+  >
+  lb_endpoints: <
+    endpoint: <
+      address: <
+        socket_address: <
+          address: "172.16.0.2"
+          port_value: 80
         >
       >
     >

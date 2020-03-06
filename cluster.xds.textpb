@@ -1,0 +1,49 @@
+cluster_name: "xds"
+endpoints: <
+  locality: <
+    region: "us"
+  >
+  lb_endpoints: <
+    endpoint: <
+      address: <
+        socket_address: <
+          address: "10.0.1.1"
+          port_value: 18008
+        >
+      >
+    >
+    health_status: HEALTHY
+  >
+>
+endpoints: <
+  locality: <
+    region: "us"
+  >
+  lb_endpoints: <
+    endpoint: <
+      address: <
+        socket_address: <
+          address: "10.0.1.2"
+          port_value: 18008
+        >
+      >
+    >
+    health_status: HEALTHY
+  >
+>
+endpoints: <
+  locality: <
+    region: "eu"
+  >
+  lb_endpoints: <
+    endpoint: <
+      address: <
+        socket_address: <
+          address: "10.0.2.1"
+          port_value: 18008
+        >
+      >
+    >
+    health_status: HEALTHY
+  >
+>

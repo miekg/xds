@@ -64,10 +64,25 @@ func list(c *cli.Context) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
 	if c.Bool("H") {
-		fmt.Fprintln(w, "CLUSTER\tVERSION\tTYPE\tMETADATA\t")
+		fmt.Fprintln(w, "CLUSTER\tVERSION\tHEALTHCHECKS\t")
 	}
 	for _, u := range clusters {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n", u.GetName(), resp.GetVersionInfo(), u.GetType(), strings.Join(metadataToStringSlice(u.GetMetadata()), " "))
+		hcs := u.GetHealthChecks()
+		hcname := []string{}
+		for _, hc := range hcs {
+			x := fmt.Sprintf("%T", hc.HealthChecker)
+			// get the prefix of the name of the type
+			// HealthCheck_HttpHealthCheck_ --> Http
+			// and supper case it.
+			prefix := strings.Index(x, "HealthCheck_")
+			if prefix == -1 || len(x) < 11 {
+				continue
+			}
+			name := strings.ToUpper(x[11:prefix])
+			hcname = append(hcname, name)
+
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n", u.GetName(), resp.GetVersionInfo(), strings.Join(hcname, " "), strings.Join(metadataToStringSlice(u.GetMetadata()), " "))
 	}
 
 	return nil

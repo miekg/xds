@@ -1,4 +1,9 @@
 cluster_name: "web"
+cluster_discovery_type: <
+    cluster_type: <
+        type: EDS
+    >
+>
 endpoints: <
   locality: <
     region: "us"

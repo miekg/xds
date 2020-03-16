@@ -1,9 +1,4 @@
 name: "web"
-cluster_discovery_type: <
-    cluster_type: <
-        type: EDS
-    >
->
 load_assignment: <
     endpoints: <
       locality: <

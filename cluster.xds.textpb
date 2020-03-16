@@ -1,7 +1,4 @@
 name: "xds"
-cluster_type: <
-    type: EDS
->
 load_assignment: <
     endpoints: <
       locality: <

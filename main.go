@@ -30,7 +30,6 @@ func main() {
 	if *debug {
 		log.D.Set()
 	}
-	os.Exit(1)
 	// create a cache
 	config := cache.New()
 	for _, cl := range clusters {

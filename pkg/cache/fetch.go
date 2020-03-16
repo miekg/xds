@@ -50,14 +50,13 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		version := uint64(0)
 		// As we only store ClusterLoadAssignments, we need to create a cluster response.
 		for _, n := range clusters {
-			cla, v := c.Retrieve(n)
-			if cla == nil {
+			cluster, v := c.Retrieve(n)
+			if cluster == nil {
 				return nil, fmt.Errorf("cluster %q not found", n)
 			}
 			if v > version {
 				version = v
 			}
-			cluster := resource.MakeCluster(cla.GetClusterName())
 			data, err := MarshalResource(cluster)
 			if err != nil {
 				return nil, err

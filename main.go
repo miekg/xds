@@ -30,10 +30,11 @@ func main() {
 	if *debug {
 		log.D.Set()
 	}
+	os.Exit(1)
 	// create a cache
 	config := cache.New()
-	for _, cla := range clusters {
-		config.Insert(cla)
+	for _, cl := range clusters {
+		config.Insert(cl)
 	}
 	log.Infof("Initialized cache with 'v1' of %d cluster parsed from directory: %q", len(clusters), *conf)
 
@@ -75,12 +76,12 @@ func rereadConfig(config *cache.Cluster, path string, stop <-chan bool) {
 			}
 			current := config.All()
 			for _, c := range clusters {
-				i := sort.Search(len(current), func(i int) bool { return c.ClusterName <= current[i] })
-				if i < len(current) && current[i] == c.ClusterName {
+				i := sort.Search(len(current), func(i int) bool { return c.Name <= current[i] })
+				if i < len(current) && current[i] == c.Name {
 					continue
 				}
 				// new cluster
-				log.Infof("Found new cluster in %q, adding cluster %s", path, c.ClusterName)
+				log.Infof("Found new cluster in %q, adding cluster %s", path, c.Name)
 				config.Insert(c)
 			}
 		}

@@ -1,49 +1,54 @@
-cluster_name: "xds"
-endpoints: <
-  locality: <
-    region: "us"
-  >
-  lb_endpoints: <
-    endpoint: <
-      address: <
-        socket_address: <
-          address: "10.0.1.1"
-          port_value: 18008
-        >
-      >
-    >
-    health_status: HEALTHY
-  >
+name: "xds"
+cluster_type: <
+    type: EDS
 >
-endpoints: <
-  locality: <
-    region: "us"
-  >
-  lb_endpoints: <
-    endpoint: <
-      address: <
-        socket_address: <
-          address: "10.0.1.2"
-          port_value: 18008
+load_assignment: <
+    endpoints: <
+      locality: <
+        region: "us"
+      >
+      lb_endpoints: <
+        endpoint: <
+          address: <
+            socket_address: <
+              address: "10.0.1.1"
+              port_value: 18008
+            >
+          >
         >
+        health_status: HEALTHY
       >
     >
-    health_status: HEALTHY
-  >
->
-endpoints: <
-  locality: <
-    region: "eu"
-  >
-  lb_endpoints: <
-    endpoint: <
-      address: <
-        socket_address: <
-          address: "10.0.2.1"
-          port_value: 18008
+    endpoints: <
+      locality: <
+        region: "us"
+      >
+      lb_endpoints: <
+        endpoint: <
+          address: <
+            socket_address: <
+              address: "10.0.1.2"
+              port_value: 18008
+            >
+          >
         >
+        health_status: HEALTHY
       >
     >
-    health_status: HEALTHY
-  >
+    endpoints: <
+      locality: <
+        region: "eu"
+      >
+      lb_endpoints: <
+        endpoint: <
+          address: <
+            socket_address: <
+              address: "10.0.2.1"
+              port_value: 18008
+            >
+          >
+        >
+        health_status: HEALTHY
+      >
+    >
 >

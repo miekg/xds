@@ -82,7 +82,7 @@ func list(c *cli.Context) error {
 			hcname = append(hcname, name)
 
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n", u.GetName(), resp.GetVersionInfo(), strings.Join(hcname, " "), strings.Join(metadataToStringSlice(u.GetMetadata()), " "))
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n", u.GetName(), resp.GetVersionInfo(), strings.Join(hcname, Joiner), strings.Join(metadataToStringSlice(u.GetMetadata()), Joiner))
 	}
 
 	return nil
@@ -161,16 +161,13 @@ func listEndpoints(c *cli.Context) error {
 				weights = append(weights, weight)
 			}
 			loc := ep.GetLocality()
-			where := strings.TrimSpace(strings.Join([]string{loc.GetRegion(), loc.GetZone(), loc.GetSubZone()}, " "))
-			if where == "" {
-				where = "UNKNOWN"
-			}
+			where := strings.TrimSpace(strings.Join([]string{loc.GetRegion(), loc.GetZone(), loc.GetSubZone()}, Joiner))
 			data = append(data, [5]string{
 				e.GetClusterName(),
-				strings.Join(endpoints, ","),
+				strings.Join(endpoints, Joiner),
 				where,
-				strings.Join(healths, ","),
-				strings.Join(weights, ","),
+				strings.Join(healths, Joiner),
+				strings.Join(weights, Joiner),
 			})
 		}
 
@@ -202,3 +199,5 @@ func metadataToStringSlice(m *corepb.Metadata) []string {
 	}
 	return fields
 }
+
+const Joiner = ","

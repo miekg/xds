@@ -6,16 +6,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	"github.com/golang/protobuf/proto"
 )
 
-func parseClusters(path string) ([]*endpointpb.ClusterLoadAssignment, error) {
+func parseClusters(path string) ([]*clusterpb.Cluster, error) {
 	dir, err := ioutil.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
-	cla := []*endpointpb.ClusterLoadAssignment{}
+	cls := []*clusterpb.Cluster{}
 	for _, f := range dir {
 		if f.IsDir() {
 			continue
@@ -30,16 +30,25 @@ func parseClusters(path string) ([]*endpointpb.ClusterLoadAssignment, error) {
 		if err != nil {
 			return nil, err
 		}
-		pb := &endpointpb.ClusterLoadAssignment{}
-		if err := proto.UnmarshalText(string(data), pb); err != nil {
-			return nil, err
-		}
 		// suffix and prefix check, now the middle is the cluster name
 		name := f.Name()[8 : len(f.Name())-7]
-		if name != pb.GetClusterName() {
-			return nil, fmt.Errorf("cluster name %q does not match file: %q: %s", pb.GetClusterName(), name, f.Name())
+
+		pb := &clusterpb.Cluster{}
+		if err := proto.UnmarshalText(string(data), pb); err != nil {
+			return nil, fmt.Errorf("cluster %q: %s", name, err)
 		}
-		cla = append(cla, pb)
+		if name != pb.GetName() {
+			return nil, fmt.Errorf("cluster name %q does not match file: %q: %s", pb.GetName(), name, f.Name())
+		}
+		// some sanity checks
+		if pb.GetType() != clusterpb.Cluster_EDS {
+			return nil, fmt.Errorf("cluster %q must have discovery type set to EDS", name)
+		}
+		hc := pb.GetHealthChecks()
+		if len(hc) == 0 {
+			return nil, fmt.Errorf("cluster %q must have health checks", name)
+		}
+		cls = append(cls, pb)
 	}
-	return cla, nil
+	return cls, nil
 }

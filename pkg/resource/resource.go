@@ -15,14 +15,6 @@
 // Package resource creates xDS resources
 package resource
 
-import (
-	"time"
-
-	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	"github.com/golang/protobuf/ptypes"
-)
-
 // Resource types in xDS.
 const (
 	ClusterType  = "type.googleapis.com/envoy.api.v2.Cluster"
@@ -36,6 +28,7 @@ const (
 )
 
 // MakeCluster create a clusterpb.Cluster.
+/*
 func MakeCluster(name string) *clusterpb.Cluster {
 	return &clusterpb.Cluster{
 		Name:                 name,
@@ -50,3 +43,4 @@ func MakeCluster(name string) *clusterpb.Cluster {
 		},
 	}
 }
+*/

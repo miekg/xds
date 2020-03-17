@@ -5,8 +5,10 @@ import (
 	"sort"
 	"strconv"
 
+	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/miekg/xds/pkg/log"
 	"github.com/miekg/xds/pkg/resource"
 )
 
@@ -25,14 +27,20 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		version := uint64(0)
 		for _, n := range clusters {
-			cla, v := c.Retrieve(n)
-			if cla == nil {
+			cluster, v := c.Retrieve(n)
+			if cluster == nil {
 				return nil, fmt.Errorf("cluster %q not found", n)
 			}
 			if v > version {
 				version = v
 			}
-			data, err := MarshalResource(cla)
+			endpoints := endpointpb.ClusterLoadAssignment(*(cluster.GetLoadAssignment()))
+			// If the endpoints cluster name if not set, set it to the cluster name
+			if endpoints.ClusterName != n {
+				log.Warningf("Cluster %q has endpoints cluster name set to: %q, overriding", n, endpoints.ClusterName)
+				endpoints.ClusterName = n // TODO(miek): this should be set in the proto!
+			}
+			data, err := MarshalResource(&endpoints)
 			if err != nil {
 				return nil, err
 			}
@@ -48,16 +56,15 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			clusters = c.All()
 		}
 		version := uint64(0)
-		// As we only store ClusterLoadAssignments, we need to create a cluster response.
+
 		for _, n := range clusters {
-			cla, v := c.Retrieve(n)
-			if cla == nil {
+			cluster, v := c.Retrieve(n)
+			if cluster == nil {
 				return nil, fmt.Errorf("cluster %q not found", n)
 			}
 			if v > version {
 				version = v
 			}
-			cluster := resource.MakeCluster(cla.GetClusterName())
 			data, err := MarshalResource(cluster)
 			if err != nil {
 				return nil, err

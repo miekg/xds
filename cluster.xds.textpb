@@ -1,8 +1,7 @@
-name: "web"
+name: "xds"
 type: EDS
 health_checks: <
-    http_health_check: <
-        path: "/health"
+    tcp_health_check: <
     >
 >
 load_assignment: <
@@ -14,7 +13,7 @@ load_assignment: <
         endpoint: <
           address: <
             socket_address: <
-              address: "127.0.1.1"
+              address: "10.0.1.1"
               port_value: 18008
             >
           >
@@ -30,7 +29,7 @@ load_assignment: <
         endpoint: <
           address: <
             socket_address: <
-              address: "127.0.1.2"
+              address: "10.0.1.2"
               port_value: 18008
             >
           >
@@ -46,7 +45,7 @@ load_assignment: <
         endpoint: <
           address: <
             socket_address: <
-              address: "127.0.2.1"
+              address: "10.0.2.1"
               port_value: 18008
             >
           >

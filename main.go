@@ -35,7 +35,7 @@ func main() {
 	for _, cl := range clusters {
 		config.Insert(cl)
 	}
-	log.Infof("Initialized cache with 'v1' of %d cluster parsed from directory: %q", len(clusters), *conf)
+	log.Infof("Initialized cache with 'v1' of %d clusters parsed from directory: %q", len(clusters), *conf)
 
 	// Every 10s look through the config directory to see if there are new files to be loaded
 	stop := make(chan bool)

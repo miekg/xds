@@ -39,7 +39,7 @@ func (c *Cluster) Retrieve(name string) (*clusterpb.Cluster, uint64) {
 	return ep, c.version
 }
 
-// All returns all cluster names available in the cache. The returns list will be alphabetically sorted.
+// All returns all cluster names in alphabetical order available in the cache.
 func (c *Cluster) All() []string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -52,6 +52,7 @@ func (c *Cluster) All() []string {
 	return keys
 }
 
+// Version returns the version of the cluster.
 func (c *Cluster) Version() uint64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

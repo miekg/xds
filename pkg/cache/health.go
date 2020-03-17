@@ -26,7 +26,7 @@ func (c *Cluster) SetHealth(req *healthpb.EndpointHealthResponse) (*healthpb.Hea
 			for _, lb := range ep.GetLbEndpoints() {
 				epa := lb.GetEndpoint().GetAddress().GetSocketAddress()
 				for j, sa := range toChange {
-					if sa == epa.String() { // strings...
+					if sa == epa.String() {
 						if lb.HealthStatus != health[j] {
 							lb.HealthStatus = health[j]
 							done = true
@@ -36,7 +36,7 @@ func (c *Cluster) SetHealth(req *healthpb.EndpointHealthResponse) (*healthpb.Hea
 			}
 		}
 		if done {
-			// we updates something, write it back to the cache.
+			// we've updated something, write it back to the cache.
 			c.Insert(cluster)
 		}
 	}

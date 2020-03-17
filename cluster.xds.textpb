@@ -1,4 +1,5 @@
 name: "xds"
+type: EDS
 load_assignment: <
     endpoints: <
       locality: <

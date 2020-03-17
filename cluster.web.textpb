@@ -1,4 +1,5 @@
 name: "web"
+type: EDS
 load_assignment: <
     endpoints: <
       locality: <

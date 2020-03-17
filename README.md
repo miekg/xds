@@ -43,7 +43,7 @@ DNS responses out of xds. CoreDNS can be found at <https://coredns.io>
     v1 for those.
 
  *  When xds starts up, files adhering to this glob "cluster.*.textpb" will be parsed as
-    ClusterLoadAssigment protobuffer in text format. These define the set of cluster we know about.
+    Cluster protobuffer in text format. These define the set of clusters we know about.
     Note: this is in effect the "admin interface", until we figure out how it should look. The
     wildcard should match the name of cluster being defined in the protobuf.
 

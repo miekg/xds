@@ -40,8 +40,13 @@ func parseClusters(path string) ([]*clusterpb.Cluster, error) {
 		if name != pb.GetName() {
 			return nil, fmt.Errorf("cluster name %q does not match file: %q: %s", pb.GetName(), name, f.Name())
 		}
+		// some sanity checks
 		if pb.GetType() != clusterpb.Cluster_EDS {
-			return nil, fmt.Errorf("cluster %q must have discovery type set to EDS")
+			return nil, fmt.Errorf("cluster %q must have discovery type set to EDS", name)
+		}
+		hc := pb.GetHealthChecks()
+		if len(hc) == 0 {
+			return nil, fmt.Errorf("cluster %q must have health checks", name)
 		}
 		cls = append(cls, pb)
 	}

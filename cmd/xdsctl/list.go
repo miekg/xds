@@ -71,6 +71,7 @@ func list(c *cli.Context) error {
 		hcname := []string{}
 		for _, hc := range hcs {
 			x := fmt.Sprintf("%T", hc.HealthChecker)
+			println("X", x)
 			// get the prefix of the name of the type
 			// HealthCheck_HttpHealthCheck_ --> Http
 			// and supper case it.
@@ -78,7 +79,8 @@ func list(c *cli.Context) error {
 			if prefix == -1 || len(x) < 11 {
 				continue
 			}
-			name := strings.ToUpper(x[11:prefix])
+			name := strings.ToUpper(x[prefix+12:]) // get the last bit
+			name = name[:len(name)-12]             // remove HealthCheck_
 			hcname = append(hcname, name)
 
 		}

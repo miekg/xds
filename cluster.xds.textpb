@@ -1,5 +1,9 @@
 name: "xds"
 type: EDS
+health_checks: <
+    tcp_health_check: <
+    >
+>
 load_assignment: <
     endpoints: <
       locality: <

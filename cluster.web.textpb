@@ -1,5 +1,10 @@
 name: "web"
 type: EDS
+health_checks: <
+    http_health_check: <
+        path: "/health"
+    >
+>
 load_assignment: <
     endpoints: <
       locality: <

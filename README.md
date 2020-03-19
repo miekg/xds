@@ -4,10 +4,10 @@ xDS is Envoy's discovery protocol. This repo contains xDS related utilities - in
 
  *  xds - management daemon that caches endpoints and clusters and hands them out using xDS and ADS.
 
- *  xdsctl - cli to manipulate and list health and weight of endpoints and clusters.
+ *  xdsctl - cli to manipulate and list details of endpoints and clusters.
 
 TLS is not implemented (yet). Note that this implements the v3 xDS API, Envoy works with this API as
-well.
+well (by having a few parts still in the v2 format).
 
 There is an admin interface specified, that uses the same protobufs (DiscoveryResponse) on a
 different endpoint. xdsctl uses xDS to manipulate the cluster info stored. All other users that read

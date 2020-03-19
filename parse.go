@@ -5,9 +5,12 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"time"
 
 	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/duration"
+	"github.com/miekg/xds/pkg/log"
 )
 
 func parseClusters(path string) ([]*clusterpb.Cluster, error) {
@@ -44,11 +47,35 @@ func parseClusters(path string) ([]*clusterpb.Cluster, error) {
 		if pb.GetType() != clusterpb.Cluster_EDS {
 			return nil, fmt.Errorf("cluster %q must have discovery type set to EDS", name)
 		}
-		hc := pb.GetHealthChecks()
-		if len(hc) == 0 {
+		hcs := pb.GetHealthChecks()
+		if len(hcs) == 0 {
 			return nil, fmt.Errorf("cluster %q must have health checks", name)
 		}
+		for _, hc := range hcs {
+			setDurationIfNil(hc.Timeout, 5*time.Second, fmt.Sprintf("Cluster %q, setting %s to", name, "Timeout"))
+			setDurationIfNil(hc.Interval, 10*time.Second, fmt.Sprintf("Cluster %q, setting %s to", name, "Internval"))
+			setDurationIfNil(hc.InitialJitter, 2*time.Second, fmt.Sprintf("Cluster %q, setting %s to", name, "InitialJitter"))
+			setDurationIfNil(hc.IntervalJitter, 1*time.Second, fmt.Sprintf("Cluster %q, setting %s to", name, "IntervalJitter"))
+		}
+
+		// Now we're fixing up clusters, by setting some missing value and defaulting settings (mostly durations) that may be left out.
+		endpoints := pb.GetLoadAssignment()
+
+		// If the endpoints cluster name if not set, set it to the cluster name
+		if endpoints.ClusterName != pb.GetName() {
+			log.Warningf("Cluster %q has endpoints cluster name set to: %q, overriding", pb.GetName(), endpoints.ClusterName)
+			endpoints.ClusterName = pb.GetName()
+		}
+
 		cls = append(cls, pb)
 	}
 	return cls, nil
+}
+
+func setDurationIfNil(a *duration.Duration, v time.Duration, msg string) {
+	if a != nil {
+		return
+	}
+	log.Warningf("%s to %v", msg, v)
+	a = &duration.Duration{Seconds: int64(v / time.Second)} // skip Nanos
 }

@@ -76,6 +76,6 @@ func setDurationIfNil(a *duration.Duration, v time.Duration, msg string) {
 	if a != nil {
 		return
 	}
-	log.Warningf("%s to %v", msg, v)
+	log.Debugf("%s to %v", msg, v)
 	a = &duration.Duration{Seconds: int64(v / time.Second)} // skip Nanos
 }

@@ -162,8 +162,19 @@ func listEndpoints(c *cli.Context) error {
 				weight := strconv.Itoa(int(lb.GetLoadBalancingWeight().GetValue()))
 				weights = append(weights, weight)
 			}
+			locs := []string{}
 			loc := ep.GetLocality()
-			where := strings.TrimSpace(strings.Join([]string{loc.GetRegion(), loc.GetZone(), loc.GetSubZone()}, Joiner))
+			if x := loc.GetRegion(); x != "" {
+				locs = append(locs, x)
+			}
+			if x := loc.GetZone(); x != "" {
+				locs = append(locs, x)
+			}
+			if x := loc.GetSubZone(); x != "" {
+				locs = append(locs, x)
+			}
+			where := strings.TrimSpace(strings.Join(locs, Joiner))
+
 			data = append(data, [5]string{
 				e.GetClusterName(),
 				strings.Join(endpoints, Joiner),

@@ -73,11 +73,11 @@ func main() {
 				Action:    health,
 			},
 			{
-				Name:        "weight",
-				Description: "Weight sets the endpoint's weight.",
-				Usage:       "set endpoint's weight in a cluster",
-				ArgsUsage:   "CLUSTER ENDPOINT WEIGHT",
-				Action:      weight,
+				Name:        "load",
+				Description: "Load sets the endpoint's load.",
+				Usage:       "set endpoint's load in a cluster",
+				ArgsUsage:   "CLUSTER ENDPOINT LOAD",
+				Action:      load,
 			},
 			{
 				Name:        "add",

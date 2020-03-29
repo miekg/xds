@@ -8,7 +8,6 @@ import (
 	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/miekg/xds/pkg/log"
 	"github.com/miekg/xds/pkg/resource"
 )
 
@@ -35,11 +34,6 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 				version = v
 			}
 			endpoints := endpointpb.ClusterLoadAssignment(*(cluster.GetLoadAssignment()))
-			// If the endpoints cluster name if not set, set it to the cluster name
-			if endpoints.ClusterName != n {
-				log.Warningf("Cluster %q has endpoints cluster name set to: %q, overriding", n, endpoints.ClusterName)
-				endpoints.ClusterName = n // TODO(miek): this should be set in the proto!
-			}
 			data, err := MarshalResource(&endpoints)
 			if err != nil {
 				return nil, err

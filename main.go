@@ -23,12 +23,12 @@ var (
 // main returns code 1 if any of the batches failed to pass all requests
 func main() {
 	flag.Parse()
+	if *debug {
+		log.D.Set()
+	}
 	clusters, err := parseClusters(*conf)
 	if err != nil {
 		log.Fatal(err)
-	}
-	if *debug {
-		log.D.Set()
 	}
 	// create a cache
 	config := cache.New()

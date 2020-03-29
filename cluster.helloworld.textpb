@@ -1,4 +1,4 @@
-name: "web"
+name: "helloworld"
 type: EDS
 health_checks: <
     http_health_check: <
@@ -14,8 +14,8 @@ load_assignment: <
         endpoint: <
           address: <
             socket_address: <
-              address: "127.0.1.1"
-              port_value: 18008
+              address: "127.0.0.1"
+              port_value: 50051
             >
           >
         >
@@ -30,24 +30,8 @@ load_assignment: <
         endpoint: <
           address: <
             socket_address: <
-              address: "127.0.1.2"
-              port_value: 18008
-            >
-          >
-        >
-        health_status: HEALTHY
-      >
-    >
-    endpoints: <
-      locality: <
-        region: "eu"
-      >
-      lb_endpoints: <
-        endpoint: <
-          address: <
-            socket_address: <
-              address: "127.0.2.1"
-              port_value: 18008
+              address: "127.0.1.1"
+              port_value: 50051
             >
           >
         >

@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/balancer/grpclb"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"
+	_ "google.golang.org/grpc/xds/experimental"
 )
 
 var (

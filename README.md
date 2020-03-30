@@ -53,4 +53,10 @@ In xds the following protocols have been implemented:
 
 * xDS - Envoy's configuration and discovery protocol
 * LRS - load reporting (also from Envoy)
-* gRPC LB - gRPC clients can retrieve cluster data (this mimics xDS but uses different protobufs)
+
+For debugging add:
+
+~~~ sh
+export RPC_GO_LOG_VERBOSITY_LEVEL=99
+export GRPC_GO_LOG_SEVERITY_LEVEL=info
+~~~

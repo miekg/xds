@@ -49,7 +49,8 @@ DNS responses out of xds. CoreDNS can be found at <https://coredns.io>
 
 See cmd/xdsctl/README.md for how to use the CLI.
 
-## Bugs
+In xds the following protocols have been implemented:
 
-What if you drain a cluster and then a new healthy end point is added? This new endpoint will get
-health checked and possibly be set health, meaning *all* traffic will flow to this one endpoint.
+* xDS - Envoy's configuration and discovery protocol
+* LRS - load reporting (also from Envoy)
+* gRPC LB - gRPC clients can retrieve cluster data (this mimics xDS but uses different protobufs)

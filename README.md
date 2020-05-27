@@ -60,3 +60,5 @@ For debugging add:
 export RPC_GO_LOG_VERBOSITY_LEVEL=99
 export GRPC_GO_LOG_SEVERITY_LEVEL=info
 ~~~
+
+For helping the xds client bootstrap set: `export GRPC_XDS_BOOTSTRAP=boostrap.json`

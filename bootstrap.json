@@ -1,0 +1,11 @@
+{
+        "xds_servers" : [{
+                "server_uri": "localhost:18000"
+        }],
+        "node": {
+                "id": "ENVOY_NODE_ID",
+                "metadata": {
+                    "TRAFFICDIRECTOR_GRPC_HOSTNAME": "trafficdirector"
+            }
+        }
+}

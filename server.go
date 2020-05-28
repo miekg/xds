@@ -19,6 +19,7 @@ import (
 	"net"
 
 	cdspb "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
+	discoverypb2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
@@ -30,7 +31,7 @@ import (
 const grpcMaxConcurrentStreams = 1000000
 
 // RunManagementServer starts an xDS server at the given port.
-func RunManagementServer(ctx context.Context, server server.Server, addr string) {
+func RunManagementServer(ctx context.Context, server server.Server, server2 server.Server2, addr string) {
 	// gRPC golang library sets a very small upper bound for the number gRPC/h2
 	// streams over a single TCP connection. If a proxy multiplexes requests over
 	// a single connection to the management server, then it might lead to
@@ -46,6 +47,7 @@ func RunManagementServer(ctx context.Context, server server.Server, addr string)
 
 	// register services
 	discoverypb.RegisterAggregatedDiscoveryServiceServer(grpcServer, server)
+	discoverypb2.RegisterAggregatedDiscoveryServiceServer(grpcServer, server2)
 	edspb.RegisterEndpointDiscoveryServiceServer(grpcServer, server)
 	cdspb.RegisterClusterDiscoveryServiceServer(grpcServer, server)
 	healthpb.RegisterHealthDiscoveryServiceServer(grpcServer, server)

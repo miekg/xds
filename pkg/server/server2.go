@@ -1,19 +1,6 @@
-// Copyright 2018 Envoyproxy Authors
-//
-//   Licensed under the Apache License, Version 2.0 (the "License");
-//   you may not use this file except in compliance with the License.
-//   You may obtain a copy of the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in writing, software
-//   distributed under the License is distributed on an "AS IS" BASIS,
-//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//   See the License for the specific language governing permissions and
-//   limitations under the License.
-
-// Package server provides an implementation of a streaming xDS server.
 package server
+
+// this file implements the v2 version of the xds protocol
 
 import (
 	"context"
@@ -22,13 +9,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	cdspb "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
-	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	discoverypb2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
-	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
-	"github.com/miekg/xds/pkg/cache"
 	"github.com/miekg/xds/pkg/log"
 	"github.com/miekg/xds/pkg/resource"
 	"google.golang.org/grpc"
@@ -36,45 +22,39 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Server is a collection of handlers for streaming discovery requests.
-type Server interface {
-	edspb.EndpointDiscoveryServiceServer
-	cdspb.ClusterDiscoveryServiceServer
-	discoverypb.AggregatedDiscoveryServiceServer
-	healthpb.HealthDiscoveryServiceServer
+// Server2 is a collection of handlers for streaming discovery (v2) requests.
+type Server2 interface {
+	discoverypb2.AggregatedDiscoveryServiceServer
+
+	// Server2 is only a wrapper around the actual server; it mostly translates protobufs to the
+	// right format and then calls the right method of server.
 
 	// Fetch is the universal fetch method for discovery requests
-	Fetch(context.Context, *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error)
+	Fetch(context.Context, *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error)
 }
 
-// NewServer creates handlers from a config watcher and callbacks.
-func NewServer(ctx context.Context, config *cache.Cluster) Server {
-	return &server{cache: config, ctx: ctx}
+func NewServer2(s Server) Server2 {
+	return &server2{s: s.(*server)}
 }
 
-type server struct {
-	cache *cache.Cluster
-
-	ctx context.Context
-
-	// streamCount for counting bi-di streams
-	streamCount int64
+type server2 struct {
+	s *server
 }
 
-type discoveryStream interface {
+type discoveryStream2 interface {
 	grpc.ServerStream
 
-	Send(*xdspb.DiscoveryResponse) error
-	Recv() (*xdspb.DiscoveryRequest, error)
+	Send(*xdspb2.DiscoveryResponse) error
+	Recv() (*xdspb2.DiscoveryRequest, error)
 }
 
-// discoveryProcess handles a bi-di stream request.
-func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.DiscoveryRequest, defaultTypeURL string) error {
-	// unique nonce generator for req-resp pairs per xDS stream; the server
-	// ignores stale nonces. nonce is only modified within send() function.
+// discoveryProcess handles a bi-di stream (v2) request.
+func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2.DiscoveryRequest, defaultTypeURL string) error {
+	// This function is copied from the server.go file. I think we can make things work in an even more transparant way
+	// but for now we'll just copy and paste code around.
 	var streamNonce int64
 
-	send := func(resp *discoverypb.DiscoveryResponse) error {
+	send := func(resp *xdspb2.DiscoveryResponse) error {
 		streamNonce += 1
 		resp.Nonce = strconv.FormatInt(streamNonce, 10)
 		return stream.Send(resp)
@@ -84,14 +64,14 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 	defer tick.Stop()
 
 	var (
-		node        = &corepb.Node{}
+		node        = &corepb2.Node{}
 		versionInfo = map[string]string{} // API string -> version CDS/EDS
 		apiVersion  = 0                   // version for this node
 	)
 
 	for {
 		select {
-		case <-s.ctx.Done():
+		case <-s.s.ctx.Done():
 			return nil
 		case req, more := <-reqCh:
 			if !more { // input stream ended or errored out
@@ -125,16 +105,18 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 				req.TypeUrl = defaultTypeURL
 			}
 
-			resp, err := s.cache.Fetch(req)
+			req2 := DiscoveryRequestToV3(req)
+			resp, err := s.s.cache.Fetch(req2)
 			if err != nil {
 				return err
 			}
+			resp2 := DiscoveryResponseToV2(resp)
 			if resp.VersionInfo == versionInfo[req.TypeUrl] {
 				log.Debugf("Update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 				continue
 			}
 
-			if err := send(resp); err != nil {
+			if err := send(resp2); err != nil {
 				return err
 			}
 			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
@@ -150,7 +132,7 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 
 			req.VersionInfo = versionInfo[resource.ClusterType3]
 			req.TypeUrl = resource.ClusterType3
-			resp, err := s.cache.Fetch(req)
+			resp, err := s.s.cache.Fetch(req)
 			if err != nil {
 				return err
 			}
@@ -159,7 +141,8 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 				continue
 			}
 
-			if err := send(resp); err != nil {
+			resp2 := DiscoveryResponseToV2(resp)
+			if err := send(resp2); err != nil {
 				return err
 			}
 			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
@@ -175,7 +158,7 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 				req.TypeUrl = resource.EndpointType
 			}
 
-			resp, err = s.cache.Fetch(req)
+			resp, err = s.s.cache.Fetch(req)
 			if err != nil {
 				return err
 			}
@@ -184,7 +167,8 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 				continue
 			}
 
-			if err := send(resp); err != nil {
+			resp2 = DiscoveryResponseToV2(resp)
+			if err := send(resp2); err != nil {
 				return err
 			}
 			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
@@ -194,9 +178,9 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 }
 
 // discoveryHandler converts a blocking read call to channels and initiates stream processing.
-func (s *server) discoveryHandler(stream discoveryStream, typeURL string) error {
+func (s *server2) discoveryHandler(stream discoveryStream2, typeURL string) error {
 	// a channel for receiving incoming requests
-	reqCh := make(chan *xdspb.DiscoveryRequest)
+	reqCh := make(chan *xdspb2.DiscoveryRequest)
 	reqStop := int32(0)
 	go func() {
 		for {
@@ -217,43 +201,44 @@ func (s *server) discoveryHandler(stream discoveryStream, typeURL string) error 
 	return err
 }
 
-func (s *server) StreamAggregatedResources(stream xdspb.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
+func (s *server2) StreamAggregatedResources(stream discoverypb2.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
 	return s.discoveryHandler(stream, resource.AnyType)
 }
 
-func (s *server) StreamEndpoints(stream edspb.EndpointDiscoveryService_StreamEndpointsServer) error {
+func (s *server2) StreamEndpoints(stream edspb.EndpointDiscoveryService_StreamEndpointsServer) error {
 	return s.discoveryHandler(stream, resource.EndpointType)
 }
 
-func (s *server) StreamClusters(stream cdspb.ClusterDiscoveryService_StreamClustersServer) error {
+func (s *server2) StreamClusters(stream cdspb.ClusterDiscoveryService_StreamClustersServer) error {
 	return s.discoveryHandler(stream, resource.ClusterType)
 }
 
 // Fetch is the universal fetch method.
-func (s *server) Fetch(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
-	resp, err := s.cache.Fetch(req)
-	return resp, err
+func (s *server2) Fetch(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
+	req3 := DiscoveryRequestToV3(req)
+	resp, err := s.s.cache.Fetch(req3)
+	resp2 := DiscoveryResponseToV2(resp)
+	return resp2, err
 }
 
-func (s *server) FetchClusters(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
-	// For xDS we use the v3 types.
-	req.TypeUrl = resource.ClusterType3
+func (s *server2) FetchClusters(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
+	println("v2 fetch")
 	return s.Fetch(ctx, req)
 }
 
-func (s *server) FetchEndpoints(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
-	req.TypeUrl = resource.EndpointType3
+func (s *server2) FetchEndpoints(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
+	println("v2 fetch")
 	return s.Fetch(ctx, req)
 }
 
-func (s *server) DeltaAggregatedResources(_ xdspb.AggregatedDiscoveryService_DeltaAggregatedResourcesServer) error {
+func (s *server2) DeltaAggregatedResources(_ discoverypb2.AggregatedDiscoveryService_DeltaAggregatedResourcesServer) error {
 	return errors.New("not implemented")
 }
 
-func (s *server) DeltaEndpoints(_ edspb.EndpointDiscoveryService_DeltaEndpointsServer) error {
+func (s *server2) DeltaEndpoints(_ edspb.EndpointDiscoveryService_DeltaEndpointsServer) error {
 	return errors.New("not implemented")
 }
 
-func (s *server) DeltaClusters(_ cdspb.ClusterDiscoveryService_DeltaClustersServer) error {
+func (s *server2) DeltaClusters(_ cdspb.ClusterDiscoveryService_DeltaClustersServer) error {
 	return errors.New("not implemented")
 }

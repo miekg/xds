@@ -202,15 +202,18 @@ func (s *server2) discoveryHandler(stream discoveryStream2, typeURL string) erro
 }
 
 func (s *server2) StreamAggregatedResources(stream discoverypb2.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
-	return s.discoveryHandler(stream, resource.AnyType)
+	//	return s.discoveryHandler(stream, resource.AnyType)
+	return nil
 }
 
 func (s *server2) StreamEndpoints(stream edspb.EndpointDiscoveryService_StreamEndpointsServer) error {
-	return s.discoveryHandler(stream, resource.EndpointType)
+	//return s.discoveryHandler(stream, resource.EndpointType)
+	return nil
 }
 
 func (s *server2) StreamClusters(stream cdspb.ClusterDiscoveryService_StreamClustersServer) error {
-	return s.discoveryHandler(stream, resource.ClusterType)
+	//	return s.discoveryHandler(stream, resource.ClusterType)
+	return nil
 }
 
 // Fetch is the universal fetch method.

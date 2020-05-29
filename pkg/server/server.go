@@ -155,7 +155,7 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 				return err
 			}
 			if resp.VersionInfo == versionInfo[req.TypeUrl] {
-				log.Debugf("Update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+				log.Debugf("CDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 				continue
 			}
 
@@ -163,7 +163,7 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 				return err
 			}
 			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
-			log.Infof("Updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+			log.Infof("CDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 
 			// EDS
 
@@ -180,7 +180,7 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 				return err
 			}
 			if resp.VersionInfo == versionInfo[req.TypeUrl] {
-				log.Debugf("Update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+				log.Debugf("EDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 				continue
 			}
 
@@ -188,7 +188,7 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 				return err
 			}
 			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
-			log.Infof("Updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+			log.Infof("EDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 		}
 	}
 }

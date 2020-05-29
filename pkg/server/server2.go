@@ -5,6 +5,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -118,6 +119,7 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 			req := &xdspb.DiscoveryRequest{}
 
 			// CDS
+			println("CDS")
 
 			req.VersionInfo = versionInfo[resource.ClusterType]
 			req.TypeUrl = resource.ClusterType
@@ -126,18 +128,20 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 				return err
 			}
 			if resp.VersionInfo == versionInfo[req.TypeUrl] {
-				log.Debugf("Update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+				log.Debugf("CDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 				continue
 			}
 
 			resp2 := DiscoveryResponseToV2(resp)
+			fmt.Printf("%+v\n", resp2)
 			if err := send(resp2); err != nil {
 				return err
 			}
 			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
-			log.Infof("Updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+			log.Infof("CDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 
 			// EDS
+			println("EDS")
 
 			// depending on the version we need to look at different strings
 			req.VersionInfo = versionInfo[resource.EndpointType]
@@ -147,17 +151,17 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 			if err != nil {
 				return err
 			}
-			if resp.VersionInfo == versionInfo[req.TypeUrl] {
-				log.Debugf("Update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-				continue
-			}
+			//if resp.VersionInfo == versionInfo[req.TypeUrl] {
+			//	log.Debugf("EDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+			//	continue
+			//}
 
 			resp2 = DiscoveryResponseToV2(resp)
 			if err := send(resp2); err != nil {
 				return err
 			}
 			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
-			log.Infof("Updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+			log.Infof("EDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 		}
 	}
 }

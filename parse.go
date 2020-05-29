@@ -8,6 +8,7 @@ import (
 	"time"
 
 	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/miekg/xds/pkg/log"
@@ -57,6 +58,9 @@ func parseClusters(path string) ([]*clusterpb.Cluster, error) {
 			setDurationIfNil(hc.InitialJitter, 2*time.Second, fmt.Sprintf("Cluster %q, setting %s to", name, "InitialJitter"))
 			setDurationIfNil(hc.IntervalJitter, 1*time.Second, fmt.Sprintf("Cluster %q, setting %s to", name, "IntervalJitter"))
 		}
+		pb.EdsClusterConfig = &clusterpb.Cluster_EdsClusterConfig{
+			EdsConfig: &corepb.ConfigSource{ConfigSourceSpecifier: &corepb.ConfigSource_Ads{Ads: &corepb.AggregatedConfigSource{}}},
+		}
 
 		// Now we're fixing up clusters, by setting some missing value and defaulting settings (mostly durations) that may be left out.
 		endpoints := pb.GetLoadAssignment()
@@ -68,6 +72,7 @@ func parseClusters(path string) ([]*clusterpb.Cluster, error) {
 		}
 
 		cls = append(cls, pb)
+		println(pb.GetEdsClusterConfig().GetEdsConfig().GetAds())
 	}
 	return cls, nil
 }

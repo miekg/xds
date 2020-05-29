@@ -45,6 +45,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
+	println("DAILED")
 	defer conn.Close()
 	c := pb.NewGreeterClient(conn)
 

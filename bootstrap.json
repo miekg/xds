@@ -3,7 +3,7 @@
                 "server_uri": "localhost:18000"
         }],
         "node": {
-                "id": "ENVOY_NODE_ID",
+                "id": "helloworld",
                 "metadata": {
                     "TRAFFICDIRECTOR_GRPC_HOSTNAME": "trafficdirector"
             }

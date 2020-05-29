@@ -26,6 +26,7 @@ type Server2 interface {
 	discoverypb2.AggregatedDiscoveryServiceServer
 	xdspb2.EndpointDiscoveryServiceServer
 	xdspb2.ClusterDiscoveryServiceServer
+	xdspb2.ListenerDiscoveryServiceServer
 	// healthpb.HealthDiscoveryServiceServer -- this is still the v3 bit
 
 	// Server2 is only a wrapper around the actual server; it mostly translates protobufs to the
@@ -101,6 +102,7 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 			req2 := DiscoveryRequestToV3(req)
 			resp, err := s.s.cache.Fetch(req2)
 			if err != nil {
+				println("NOOO", err.Error())
 				return err
 			}
 			resp2 := DiscoveryResponseToV2(resp)
@@ -202,6 +204,10 @@ func (s *server2) StreamClusters(stream xdspb2.ClusterDiscoveryService_StreamClu
 	return s.discoveryHandler(stream, resource.ClusterType)
 }
 
+func (s *server2) StreamListeners(stream xdspb2.ListenerDiscoveryService_StreamListenersServer) error {
+	return s.discoveryHandler(stream, resource.ClusterType)
+}
+
 // Fetch is the universal fetch method.
 func (s *server2) Fetch(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
 	req3 := DiscoveryRequestToV3(req)
@@ -211,12 +217,14 @@ func (s *server2) Fetch(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xds
 }
 
 func (s *server2) FetchClusters(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
-	println("v2 fetch")
 	return s.Fetch(ctx, req)
 }
 
 func (s *server2) FetchEndpoints(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
-	println("v2 fetch")
+	return s.Fetch(ctx, req)
+}
+
+func (s *server2) FetchListeners(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
 	return s.Fetch(ctx, req)
 }
 
@@ -229,5 +237,9 @@ func (s *server2) DeltaEndpoints(_ xdspb2.EndpointDiscoveryService_DeltaEndpoint
 }
 
 func (s *server2) DeltaClusters(_ xdspb2.ClusterDiscoveryService_DeltaClustersServer) error {
+	return errors.New("not implemented")
+}
+
+func (s *server2) DeltaListeners(_ xdspb2.ListenerDiscoveryService_DeltaListenersServer) error {
 	return errors.New("not implemented")
 }

@@ -62,3 +62,21 @@ export GRPC_GO_LOG_SEVERITY_LEVEL=info
 ~~~
 
 For helping the xds client bootstrap set: `export GRPC_XDS_BOOTSTRAP=boostrap.json`
+
+## Usage
+
+Start the management server and then the client:
+
+~~~
+% ./xds -debug
+~~~
+
+~~~
+% ./helloworld/client/client -addr xds://127.0.0.1:18000/helloworld:50501
+~~~
+Note you can specify a DNS server to use, but then the client will *also* do DNS looks up and you
+get a weird mix of (old?) grpclb and xDS behavior:
+
+~~~
+% ./helloworld/client/client -addr dns://127.0.0.1:1053/helloworld.lb.example.org:50501
+~~~

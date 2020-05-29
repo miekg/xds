@@ -208,6 +208,7 @@ func (s *server) discoveryHandler(stream discoveryStream, typeURL string) error 
 				close(reqCh)
 				return
 			}
+			println("SEEN", typeURL, req.TypeUrl)
 			reqCh <- req
 		}
 	}()

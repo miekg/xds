@@ -19,9 +19,12 @@ package resource
 const (
 	ClusterType  = "type.googleapis.com/envoy.api.v2.Cluster"
 	EndpointType = "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment"
+	ListenerType = "type.googleapis.com/envoy.api.v2.Listener"
 
+	// These types need to be removed, they seem to not serve any purpose other than creating confusion.
 	ClusterType3  = "type.googleapis.com/envoy.config.cluster.v3.Cluster"
 	EndpointType3 = "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment"
+	ListenerType3 = "type.googleapis.com/envoy.config.listener.v3.Listener"
 
 	// AnyType is used only by ADS
 	AnyType = ""

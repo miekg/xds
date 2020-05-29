@@ -54,6 +54,7 @@ func RunManagementServer(ctx context.Context, server server.Server, server2 serv
 
 	discoverypb2.RegisterAggregatedDiscoveryServiceServer(grpcServer, server2)
 	xdspb2.RegisterClusterDiscoveryServiceServer(grpcServer, server2)
+	xdspb2.RegisterListenerDiscoveryServiceServer(grpcServer, server2)
 
 	log.Infof("Management server listening on %s", addr)
 	go func() {

@@ -67,6 +67,9 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
+	case resource.ListenerType, resource.ListenerType3:
+		return &discoverypb.DiscoveryResponse{VersionInfo: "1", Resources: resources, TypeUrl: req.TypeUrl}, nil
+
 	}
 	return nil, fmt.Errorf("unrecognized/unsupported type %q:", req.TypeUrl)
 }

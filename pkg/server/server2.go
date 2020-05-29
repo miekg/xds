@@ -11,10 +11,8 @@ import (
 
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	cdspb "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	discoverypb2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	"github.com/miekg/xds/pkg/log"
 	"github.com/miekg/xds/pkg/resource"
 	"google.golang.org/grpc"
@@ -25,6 +23,9 @@ import (
 // Server2 is a collection of handlers for streaming discovery (v2) requests.
 type Server2 interface {
 	discoverypb2.AggregatedDiscoveryServiceServer
+	xdspb2.EndpointDiscoveryServiceServer
+	xdspb2.ClusterDiscoveryServiceServer
+	// healthpb.HealthDiscoveryServiceServer -- this is still the v3 bit
 
 	// Server2 is only a wrapper around the actual server; it mostly translates protobufs to the
 	// right format and then calls the right method of server.
@@ -66,7 +67,6 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 	var (
 		node        = &corepb2.Node{}
 		versionInfo = map[string]string{} // API string -> version CDS/EDS
-		apiVersion  = 0                   // version for this node
 	)
 
 	for {
@@ -86,14 +86,6 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 				node = req.Node
 			} else {
 				req.Node = node
-			}
-
-			// apiVersion is used to contruct the right endpoint discovery type when we send updates.
-			switch req.TypeUrl {
-			case resource.EndpointType3:
-				apiVersion = 3
-			case resource.EndpointType:
-				apiVersion = 2
 			}
 
 			// type URL is required for ADS but is implicit for xDS
@@ -123,15 +115,12 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 			log.Infof("Updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 
 		case <-tick.C:
-			if apiVersion == 0 {
-				log.Warningf("No API version seen from node with ID %s, defaulting to 2", node.Id)
-			}
 			req := &xdspb.DiscoveryRequest{}
 
 			// CDS
 
-			req.VersionInfo = versionInfo[resource.ClusterType3]
-			req.TypeUrl = resource.ClusterType3
+			req.VersionInfo = versionInfo[resource.ClusterType]
+			req.TypeUrl = resource.ClusterType
 			resp, err := s.s.cache.Fetch(req)
 			if err != nil {
 				return err
@@ -151,12 +140,8 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 			// EDS
 
 			// depending on the version we need to look at different strings
-			req.VersionInfo = versionInfo[resource.EndpointType3]
-			req.TypeUrl = resource.EndpointType3
-			if apiVersion == 0 || apiVersion == 2 {
-				req.VersionInfo = versionInfo[resource.EndpointType]
-				req.TypeUrl = resource.EndpointType
-			}
+			req.VersionInfo = versionInfo[resource.EndpointType]
+			req.TypeUrl = resource.EndpointType
 
 			resp, err = s.s.cache.Fetch(req)
 			if err != nil {
@@ -202,18 +187,15 @@ func (s *server2) discoveryHandler(stream discoveryStream2, typeURL string) erro
 }
 
 func (s *server2) StreamAggregatedResources(stream discoverypb2.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
-	//	return s.discoveryHandler(stream, resource.AnyType)
-	return nil
+	return s.discoveryHandler(stream, resource.AnyType)
 }
 
-func (s *server2) StreamEndpoints(stream edspb.EndpointDiscoveryService_StreamEndpointsServer) error {
-	//return s.discoveryHandler(stream, resource.EndpointType)
-	return nil
+func (s *server2) StreamEndpoints(stream xdspb2.EndpointDiscoveryService_StreamEndpointsServer) error {
+	return s.discoveryHandler(stream, resource.EndpointType)
 }
 
-func (s *server2) StreamClusters(stream cdspb.ClusterDiscoveryService_StreamClustersServer) error {
-	//	return s.discoveryHandler(stream, resource.ClusterType)
-	return nil
+func (s *server2) StreamClusters(stream xdspb2.ClusterDiscoveryService_StreamClustersServer) error {
+	return s.discoveryHandler(stream, resource.ClusterType)
 }
 
 // Fetch is the universal fetch method.
@@ -238,10 +220,10 @@ func (s *server2) DeltaAggregatedResources(_ discoverypb2.AggregatedDiscoverySer
 	return errors.New("not implemented")
 }
 
-func (s *server2) DeltaEndpoints(_ edspb.EndpointDiscoveryService_DeltaEndpointsServer) error {
+func (s *server2) DeltaEndpoints(_ xdspb2.EndpointDiscoveryService_DeltaEndpointsServer) error {
 	return errors.New("not implemented")
 }
 
-func (s *server2) DeltaClusters(_ cdspb.ClusterDiscoveryService_DeltaClustersServer) error {
+func (s *server2) DeltaClusters(_ xdspb2.ClusterDiscoveryService_DeltaClustersServer) error {
 	return errors.New("not implemented")
 }

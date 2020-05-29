@@ -18,6 +18,7 @@ import (
 	"context"
 	"net"
 
+	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	cdspb "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	discoverypb2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -47,10 +48,12 @@ func RunManagementServer(ctx context.Context, server server.Server, server2 serv
 
 	// register services
 	discoverypb.RegisterAggregatedDiscoveryServiceServer(grpcServer, server)
-	discoverypb2.RegisterAggregatedDiscoveryServiceServer(grpcServer, server2)
 	edspb.RegisterEndpointDiscoveryServiceServer(grpcServer, server)
 	cdspb.RegisterClusterDiscoveryServiceServer(grpcServer, server)
 	healthpb.RegisterHealthDiscoveryServiceServer(grpcServer, server)
+
+	discoverypb2.RegisterAggregatedDiscoveryServiceServer(grpcServer, server2)
+	xdspb2.RegisterClusterDiscoveryServiceServer(grpcServer, server2)
 
 	log.Infof("Management server listening on %s", addr)
 	go func() {

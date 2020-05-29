@@ -38,9 +38,9 @@ import (
 
 // Server is a collection of handlers for streaming discovery requests.
 type Server interface {
+	discoverypb.AggregatedDiscoveryServiceServer
 	edspb.EndpointDiscoveryServiceServer
 	cdspb.ClusterDiscoveryServiceServer
-	discoverypb.AggregatedDiscoveryServiceServer
 	healthpb.HealthDiscoveryServiceServer
 
 	// Fetch is the universal fetch method for discovery requests

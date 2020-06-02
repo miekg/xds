@@ -5,10 +5,16 @@ import (
 	"sort"
 	"strconv"
 
+	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	listenerpb "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	routepb "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	httppb "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/miekg/xds/pkg/resource"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // Fetch fetches cluster data from the cluster. Here we probably deviate from the spec, as empty versions are allowed and we
@@ -67,7 +73,74 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
-	case resource.ListenerType, resource.ListenerType3:
+		// gRPC uses these types to create a server config
+		// in grpcLB this was returned via a DNS TXT record.
+	case resource.ListenerType:
+		hcm := &httppb.HttpConnectionManager{
+			RouteSpecifier: &httppb.HttpConnectionManager_Rds{
+				Rds: &httppb.Rds{
+					ConfigSource: &corepb.ConfigSource{
+						ConfigSourceSpecifier: &corepb.ConfigSource_Ads{Ads: &corepb.AggregatedConfigSource{}},
+					},
+					RouteConfigName: "helloworld", // <-- also cluster name?!
+				},
+			},
+		}
+		hcmdata, _ := MarshalResource(hcm)
+		lst := &listenerpb.Listener{
+			Name: "helloworld", // <-- cluster name!
+			ApiListener: &listenerpb.ApiListener{
+				ApiListener: &anypb.Any{
+					TypeUrl: resource.HttpConnManagerType,
+					Value:   hcmdata,
+				},
+			},
+		}
+		data, err := MarshalResource(lst)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
+		return &discoverypb.DiscoveryResponse{VersionInfo: "1", Resources: resources, TypeUrl: req.TypeUrl}, nil
+	case resource.RouteConfigType:
+		routec := &routepb.RouteConfiguration{
+			Name: "helloworld",
+			VirtualHosts: []*routepb.VirtualHost{
+				{
+					Domains: []string{"helloworld"},
+					Routes: []*routepb.Route{
+						{
+							Match: &routepb.RouteMatch{PathSpecifier: &routepb.RouteMatch_Prefix{Prefix: ""}},
+							Action: &routepb.Route_Route{
+								Route: &routepb.RouteAction{
+									ClusterSpecifier: &routepb.RouteAction_Cluster{Cluster: "helloworld"},
+								},
+							},
+						},
+					},
+				},
+				{
+					Domains: []string{"helloworld"},
+					Routes: []*routepb.Route{
+						{
+							Match: &routepb.RouteMatch{PathSpecifier: &routepb.RouteMatch_Prefix{Prefix: ""}},
+							Action: &routepb.Route_Route{
+								Route: &routepb.RouteAction{
+									ClusterSpecifier: &routepb.RouteAction_Cluster{Cluster: "helloworld"},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		data, err := MarshalResource(routec)
+		if err != nil {
+			return nil, err
+		}
+
+		resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		return &discoverypb.DiscoveryResponse{VersionInfo: "1", Resources: resources, TypeUrl: req.TypeUrl}, nil
 
 	}

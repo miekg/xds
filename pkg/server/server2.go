@@ -63,7 +63,7 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 		return stream.Send(resp)
 	}
 
-	tick := time.NewTicker(10 * time.Second) // every 10s we send updates (if there are any to this client).
+	tick := time.NewTicker(2 * time.Second) // every 10s we send updates (if there are any to this client).
 	defer tick.Stop()
 
 	var (
@@ -116,7 +116,6 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 			}
 			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
 			log.Infof("Updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-
 		case <-tick.C:
 			req := &xdspb.DiscoveryRequest{}
 
@@ -129,10 +128,10 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 			if err != nil {
 				return err
 			}
-			if resp.VersionInfo == versionInfo[req.TypeUrl] {
-				log.Debugf("CDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-				continue
-			}
+			//if resp.VersionInfo == versionInfo[req.TypeUrl] {
+			//	log.Debugf("CDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+			//	continue
+			//}
 
 			resp2 := DiscoveryResponseToV2(resp)
 			fmt.Printf("%+v\n", resp2)
@@ -164,6 +163,52 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 			}
 			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
 			log.Infof("EDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+
+			// LDS
+			println("LDS")
+
+			// depending on the version we need to look at different strings
+			req.VersionInfo = versionInfo[resource.ListenerType]
+			req.TypeUrl = resource.ListenerType
+
+			resp, err = s.s.cache.Fetch(req)
+			if err != nil {
+				return err
+			}
+			//if resp.VersionInfo == versionInfo[req.TypeUrl] {
+			//	log.Debugf("EDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+			//	continue
+			//}
+
+			resp2 = DiscoveryResponseToV2(resp)
+			if err := send(resp2); err != nil {
+				return err
+			}
+			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
+			log.Infof("LDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+
+			// RDS
+			println("RDS")
+
+			// depending on the version we need to look at different strings
+			req.VersionInfo = versionInfo[resource.RouteConfigType]
+			req.TypeUrl = resource.RouteConfigType
+
+			resp, err = s.s.cache.Fetch(req)
+			if err != nil {
+				return err
+			}
+			//if resp.VersionInfo == versionInfo[req.TypeUrl] {
+			//	log.Debugf("EDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+			//	continue
+			//}
+
+			resp2 = DiscoveryResponseToV2(resp)
+			if err := send(resp2); err != nil {
+				return err
+			}
+			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
+			log.Infof("RDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 		}
 	}
 }

@@ -72,7 +72,6 @@ func parseClusters(path string) ([]*clusterpb.Cluster, error) {
 		}
 
 		cls = append(cls, pb)
-		println(pb.GetEdsClusterConfig().GetEdsConfig().GetAds())
 	}
 	return cls, nil
 }

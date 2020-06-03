@@ -71,7 +71,6 @@ func list(c *cli.Context) error {
 		hcname := []string{}
 		for _, hc := range hcs {
 			x := fmt.Sprintf("%T", hc.HealthChecker)
-			println("X", x)
 			// get the prefix of the name of the type
 			// HealthCheck_HttpHealthCheck_ --> Http
 			// and supper case it.

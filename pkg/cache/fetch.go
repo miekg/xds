@@ -73,75 +73,95 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
-		// gRPC uses these types to create a server config
-		// in grpcLB this was returned via a DNS TXT record.
 	case resource.ListenerType:
-		hcm := &httppb.HttpConnectionManager{
-			RouteSpecifier: &httppb.HttpConnectionManager_Rds{
-				Rds: &httppb.Rds{
-					ConfigSource: &corepb.ConfigSource{
-						ConfigSourceSpecifier: &corepb.ConfigSource_Ads{Ads: &corepb.AggregatedConfigSource{}},
+		sort.Strings(req.ResourceNames)
+		clusters := req.ResourceNames
+		if len(req.ResourceNames) == 0 {
+			clusters = c.All()
+		}
+		version := uint64(0)
+
+		for _, n := range clusters {
+			cluster, v := c.Retrieve(n)
+			if cluster == nil {
+				return nil, fmt.Errorf("cluster %q not found", n)
+			}
+			if v > version {
+				version = v
+			}
+
+			hcm := &httppb.HttpConnectionManager{
+				RouteSpecifier: &httppb.HttpConnectionManager_Rds{
+					Rds: &httppb.Rds{
+						ConfigSource: &corepb.ConfigSource{
+							ConfigSourceSpecifier: &corepb.ConfigSource_Ads{Ads: &corepb.AggregatedConfigSource{}},
+						},
+						RouteConfigName: cluster.Name,
 					},
-					RouteConfigName: "helloworld", // <-- also cluster name?!
 				},
-			},
-		}
-		hcmdata, _ := MarshalResource(hcm)
-		lst := &listenerpb.Listener{
-			Name: "helloworld", // <-- cluster name!
-			ApiListener: &listenerpb.ApiListener{
-				ApiListener: &anypb.Any{
-					TypeUrl: resource.HttpConnManagerType,
-					Value:   hcmdata,
+			}
+			hcmdata, _ := MarshalResource(hcm)
+			lst := &listenerpb.Listener{
+				Name: cluster.Name,
+				ApiListener: &listenerpb.ApiListener{
+					ApiListener: &anypb.Any{
+						TypeUrl: resource.HttpConnManagerType,
+						Value:   hcmdata,
+					},
 				},
-			},
+			}
+			data, err := MarshalResource(lst)
+			if err != nil {
+				return nil, err
+			}
+			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
-		data, err := MarshalResource(lst)
-		if err != nil {
-			return nil, err
-		}
-		resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
-		return &discoverypb.DiscoveryResponse{VersionInfo: "1", Resources: resources, TypeUrl: req.TypeUrl}, nil
+		versionInfo := strconv.FormatUint(version, 10)
+		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 	case resource.RouteConfigType:
-		routec := &routepb.RouteConfiguration{
-			Name: "helloworld",
-			VirtualHosts: []*routepb.VirtualHost{
-				{
-					Domains: []string{"helloworld"},
-					Routes: []*routepb.Route{
-						{
-							Match: &routepb.RouteMatch{PathSpecifier: &routepb.RouteMatch_Prefix{Prefix: ""}},
-							Action: &routepb.Route_Route{
-								Route: &routepb.RouteAction{
-									ClusterSpecifier: &routepb.RouteAction_Cluster{Cluster: "helloworld"},
+		sort.Strings(req.ResourceNames)
+		clusters := req.ResourceNames
+		if len(req.ResourceNames) == 0 {
+			clusters = c.All()
+		}
+		version := uint64(0)
+
+		for _, n := range clusters {
+			cluster, v := c.Retrieve(n)
+			if cluster == nil {
+				return nil, fmt.Errorf("cluster %q not found", n)
+			}
+			if v > version {
+				version = v
+			}
+
+			routec := &routepb.RouteConfiguration{
+				Name: cluster.Name,
+				VirtualHosts: []*routepb.VirtualHost{
+					{
+						Domains: []string{cluster.Name}, // cluster.Name, here??
+						Routes: []*routepb.Route{
+							{
+								Match: &routepb.RouteMatch{PathSpecifier: &routepb.RouteMatch_Prefix{Prefix: ""}},
+								Action: &routepb.Route_Route{
+									Route: &routepb.RouteAction{
+										ClusterSpecifier: &routepb.RouteAction_Cluster{Cluster: cluster.Name},
+									},
 								},
 							},
 						},
 					},
 				},
-				{
-					Domains: []string{"helloworld"},
-					Routes: []*routepb.Route{
-						{
-							Match: &routepb.RouteMatch{PathSpecifier: &routepb.RouteMatch_Prefix{Prefix: ""}},
-							Action: &routepb.Route_Route{
-								Route: &routepb.RouteAction{
-									ClusterSpecifier: &routepb.RouteAction_Cluster{Cluster: "helloworld"},
-								},
-							},
-						},
-					},
-				},
-			},
-		}
+			}
 
-		data, err := MarshalResource(routec)
-		if err != nil {
-			return nil, err
+			data, err := MarshalResource(routec)
+			if err != nil {
+				return nil, err
+			}
+			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
-
-		resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
-		return &discoverypb.DiscoveryResponse{VersionInfo: "1", Resources: resources, TypeUrl: req.TypeUrl}, nil
+		versionInfo := strconv.FormatUint(version, 10)
+		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 
 	}
 	return nil, fmt.Errorf("unrecognized/unsupported type %q:", req.TypeUrl)

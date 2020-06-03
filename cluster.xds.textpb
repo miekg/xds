@@ -6,6 +6,9 @@ health_checks: <
 >
 load_assignment: <
     endpoints: <
+      load_balancing_weight: <
+        value: 2
+      >
       locality: <
         region: "us"
       >

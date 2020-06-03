@@ -156,14 +156,14 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 			}
 			if resp.VersionInfo == versionInfo[req.TypeUrl] {
 				log.Debugf("CDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-				continue
-			}
+			} else {
 
-			if err := send(resp); err != nil {
-				return err
+				if err := send(resp); err != nil {
+					return err
+				}
+				versionInfo[req.TypeUrl] = resp.GetVersionInfo()
+				log.Infof("CDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 			}
-			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
-			log.Infof("CDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 
 			// EDS
 
@@ -181,14 +181,14 @@ func (s *server) discoveryProcess(stream discoveryStream, reqCh <-chan *xdspb.Di
 			}
 			if resp.VersionInfo == versionInfo[req.TypeUrl] {
 				log.Debugf("EDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-				continue
-			}
+			} else {
 
-			if err := send(resp); err != nil {
-				return err
+				if err := send(resp); err != nil {
+					return err
+				}
+				versionInfo[req.TypeUrl] = resp.GetVersionInfo()
+				log.Infof("EDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 			}
-			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
-			log.Infof("EDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 		}
 	}
 }
@@ -208,7 +208,6 @@ func (s *server) discoveryHandler(stream discoveryStream, typeURL string) error 
 				close(reqCh)
 				return
 			}
-			println("SEEN", typeURL, req.TypeUrl)
 			reqCh <- req
 		}
 	}()

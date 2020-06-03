@@ -10,13 +10,10 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
 	github.com/urfave/cli/v2 v2.1.1
-	golang.org/x/net v0.0.0-20200520182314-0ba52f642ac2 // indirect
-	golang.org/x/sys v0.0.0-20200523222454-059865788121 // indirect
-	golang.org/x/text v0.3.2 // indirect
-	google.golang.org/genproto v0.0.0-20200527145253-8367513e4ece // indirect
+	golang.org/x/net v0.0.0-20200602114024-627f9648deb9 // indirect
+	golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980 // indirect
+	google.golang.org/genproto v0.0.0-20200603110839-e855014d5736 // indirect
 	google.golang.org/grpc v1.30.0-dev.1.0.20200528205249-f818fd2a025e
 	google.golang.org/grpc/examples v0.0.0-20200528205249-f818fd2a025e
 	google.golang.org/protobuf v1.24.0
 )
-
-replace google.golang.org/grpc => /home/miek/gohack/google.golang.org/grpc

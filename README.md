@@ -51,8 +51,8 @@ See cmd/xdsctl/README.md for how to use the CLI.
 
 In xds the following protocols have been implemented:
 
-* xDS - Envoy's configuration and discovery protocol
-* LRS - load reporting (also from Envoy)
+* xDS - Envoy's configuration and discovery protocol (includes LDS, RDS, EDS and CDS)
+* LRS - load reporting (also from Envoy) - not implemented yet.
 
 For debugging add:
 
@@ -61,7 +61,7 @@ export RPC_GO_LOG_VERBOSITY_LEVEL=99
 export GRPC_GO_LOG_SEVERITY_LEVEL=info
 ~~~
 
-For helping the xds client bootstrap set: `export GRPC_XDS_BOOTSTRAP=boostrap.json`
+For helping the xds client bootstrap set: `export GRPC_XDS_BOOTSTRAP=./boostrap.json`
 
 ## Usage
 
@@ -72,10 +72,10 @@ Start the management server and then the client:
 ~~~
 
 ~~~
-% ./helloworld/client/client -addr xds://127.0.0.1:18000/helloworld:50501
+% ./helloworld/client/client -addr xds:///helloworld
 ~~~
 Note you can specify a DNS server to use, but then the client will *also* do DNS looks up and you
-get a weird mix of (old?) grpclb and xDS behavior:
+get a weird mix of grpclb and xDS behavior:
 
 ~~~
 % ./helloworld/client/client -addr dns://127.0.0.1:1053/helloworld.lb.example.org:50501

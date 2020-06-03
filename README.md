@@ -80,3 +80,8 @@ get a weird mix of grpclb and xDS behavior:
 ~~~
 % ./helloworld/client/client -addr dns://127.0.0.1:1053/helloworld.lb.example.org:50501
 ~~~
+
+## TODO
+
+* version per client, what if client has newer version that we've got cached? (maybe dealt with in
+  the xDS spec)

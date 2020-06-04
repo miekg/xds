@@ -15,5 +15,4 @@ require (
 	google.golang.org/genproto v0.0.0-20200603110839-e855014d5736 // indirect
 	google.golang.org/grpc v1.30.0-dev.1.0.20200528205249-f818fd2a025e
 	google.golang.org/grpc/examples v0.0.0-20200528205249-f818fd2a025e
-	google.golang.org/protobuf v1.24.0
 )

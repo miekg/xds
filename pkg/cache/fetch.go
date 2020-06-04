@@ -24,7 +24,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 	var resources []*any.Any
 
 	switch req.TypeUrl {
-	case resource.EndpointType, resource.EndpointType3:
+	case resource.EndpointType:
 		sort.Strings(req.ResourceNames)
 		clusters := req.ResourceNames
 		if len(req.ResourceNames) == 0 {
@@ -49,7 +49,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		versionInfo := strconv.FormatUint(version, 10)
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 
-	case resource.ClusterType, resource.ClusterType3:
+	case resource.ClusterType:
 		sort.Strings(req.ResourceNames)
 		clusters := req.ResourceNames
 		if len(req.ResourceNames) == 0 {

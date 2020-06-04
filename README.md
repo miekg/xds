@@ -6,13 +6,15 @@ xDS is Envoy's discovery protocol. This repo contains xDS related utilities - in
 
  *  xdsctl - cli to manipulate and list details of endpoints and clusters.
 
-TLS is not implemented (yet). Note that this implements the v3 xDS API, Envoy works with this API as
-well (by having a few parts still in the v2 format).
+TLS is not implemented (yet). Note that this implements the v2/v3 xDS API, Envoy works with this API
+as well.
 
 There is an admin interface specified, that uses the same protobufs (DiscoveryResponse) on a
 different endpoint. xdsctl uses xDS to manipulate the cluster info stored. All other users that read
 from it must use ADS. Every 10 seconds `xds` will send out an update (if there are changes) to all
 connected clients.
+
+THIS IS A PROTOTYPE IMPLEMENTATION. It may get extended to actual production quality at some point.
 
 ## Trying out
 
@@ -22,13 +24,14 @@ Build the server and clients:
 
  *  client: `cd cmd/xdsctl; go build`
 
+ *  helloworld client and server: `cd helloworld/{client,server}; go build`
+
 Start the server with `xds` and then use the client to connect to it with `xdsctl -k -s
 127.0.0.1:18000 ls`. When starting up `xds` will read files `cluster.*.textpb` that contain clusters
 to use. This will continue during the runtime of the process; new clusters - if found - will be
 added. Removal is not implemented (yet).
 
-Both xDS and ADS are implemented by `xds`. For xDS we force the types to the v3 protos. For ADS (and
-to make Envoy happy) we support also v2 - this may not be interely up to specification though).
+Both xDS and ADS are implemented by `xds`.
 
 The `envoy-bootstrap.yaml` can be used to point Envoy to the xds control plane - note this only
 gives envoy CDS/EDS responses (via ADS), so no listeners nor routes. Envoy can be downloaded from
@@ -83,5 +86,5 @@ get a weird mix of grpclb and xDS behavior:
 
 ## TODO
 
-* version per client, what if client has newer version that we've got cached? (maybe dealt with in
-  the xDS spec)
+* version per client id
+* canceling watches and a lot more of this stuff

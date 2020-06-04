@@ -22,13 +22,9 @@ const (
 	ListenerType    = "type.googleapis.com/envoy.api.v2.Listener"
 	RouteConfigType = "type.googleapis.com/envoy.api.v2.RouteConfiguration"
 
-	// These types need to be removed, they seem to not serve any purpose other than creating confusion.
-	ClusterType3  = "type.googleapis.com/envoy.config.cluster.v3.Cluster"
-	EndpointType3 = "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment"
-
 	HttpConnManagerType = "type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager"
 
-	// AnyType is used only by ADS
+	// AnyType is used only by ADS.
 	AnyType = ""
 )
 

@@ -26,6 +26,7 @@ type Server2 interface {
 	xdspb2.EndpointDiscoveryServiceServer
 	xdspb2.ClusterDiscoveryServiceServer
 	xdspb2.ListenerDiscoveryServiceServer
+	xdspb2.RouteDiscoveryServiceServer
 	// healthpb.HealthDiscoveryServiceServer -- this is still the v3 bit
 
 	// Server2 is only a wrapper around the actual server; it mostly translates protobufs to the
@@ -62,7 +63,7 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 		return stream.Send(resp)
 	}
 
-	tick := time.NewTicker(2 * time.Second) // every 10s we send updates (if there are any to this client).
+	tick := time.NewTicker(10 * time.Second) // every 10s we send updates (if there are any to this client).
 	defer tick.Stop()
 
 	var (
@@ -98,8 +99,8 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 				req.TypeUrl = defaultTypeURL
 			}
 
-			req2 := DiscoveryRequestToV3(req)
-			resp, err := s.s.cache.Fetch(req2)
+			req3 := DiscoveryRequestToV3(req)
+			resp, err := s.s.cache.Fetch(req3)
 			if err != nil {
 				return err
 			}
@@ -112,93 +113,29 @@ func (s *server2) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2
 			if err := send(resp2); err != nil {
 				return err
 			}
-			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
 			log.Infof("Updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
 		case <-tick.C:
 			req := &xdspb.DiscoveryRequest{}
 
-			// CDS
-
-			req.VersionInfo = versionInfo[resource.ClusterType]
-			req.TypeUrl = resource.ClusterType
-			resp, err := s.s.cache.Fetch(req)
-			if err != nil {
-				return err
-			}
-			if resp.VersionInfo == versionInfo[req.TypeUrl] {
-				log.Debugf("CDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-			} else {
-				resp2 := DiscoveryResponseToV2(resp)
-				if err := send(resp2); err != nil {
+			for _, tpy := range []string{resource.ClusterType, resource.EndpointType, resource.ListenerType, resource.RouteConfigType} {
+				req.VersionInfo = versionInfo[tpy]
+				req.TypeUrl = tpy
+				resp, err := s.s.cache.Fetch(req)
+				if err != nil {
 					return err
 				}
-				versionInfo[req.TypeUrl] = resp.GetVersionInfo()
-				log.Infof("CDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-			}
-
-			// EDS
-
-			// depending on the version we need to look at different strings
-			req.VersionInfo = versionInfo[resource.EndpointType]
-			req.TypeUrl = resource.EndpointType
-
-			resp, err = s.s.cache.Fetch(req)
-			if err != nil {
-				return err
-			}
-			if resp.VersionInfo == versionInfo[req.TypeUrl] {
-				log.Debugf("EDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-			} else {
-				resp2 := DiscoveryResponseToV2(resp)
-				if err := send(resp2); err != nil {
-					return err
+				if resp.VersionInfo == versionInfo[req.TypeUrl] {
+					log.Debugf("Update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+					continue
 				}
-				versionInfo[req.TypeUrl] = resp.GetVersionInfo()
-				log.Infof("EDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-			}
-
-			// LDS
-
-			// depending on the version we need to look at different strings
-			req.VersionInfo = versionInfo[resource.ListenerType]
-			req.TypeUrl = resource.ListenerType
-
-			resp, err = s.s.cache.Fetch(req)
-			if err != nil {
-				return err
-			}
-			if resp.VersionInfo == versionInfo[req.TypeUrl] {
-				log.Debugf("EDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-			} else {
 
 				resp2 := DiscoveryResponseToV2(resp)
 				if err := send(resp2); err != nil {
 					return err
 				}
 				versionInfo[req.TypeUrl] = resp.GetVersionInfo()
-				log.Infof("LDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-			}
-
-			// RDS
-
-			// depending on the version we need to look at different strings
-			req.VersionInfo = versionInfo[resource.RouteConfigType]
-			req.TypeUrl = resource.RouteConfigType
-
-			resp, err = s.s.cache.Fetch(req)
-			if err != nil {
-				return err
-			}
-			if resp.VersionInfo == versionInfo[req.TypeUrl] {
-				log.Debugf("EDS update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
-			} else {
-
-				resp2 := DiscoveryResponseToV2(resp)
-				if err := send(resp2); err != nil {
-					return err
-				}
-				versionInfo[req.TypeUrl] = resp.GetVersionInfo()
-				log.Infof("RDS updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
+				log.Infof("updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 			}
 		}
 	}
@@ -241,7 +178,11 @@ func (s *server2) StreamClusters(stream xdspb2.ClusterDiscoveryService_StreamClu
 }
 
 func (s *server2) StreamListeners(stream xdspb2.ListenerDiscoveryService_StreamListenersServer) error {
-	return s.discoveryHandler(stream, resource.ClusterType)
+	return s.discoveryHandler(stream, resource.ListenerType)
+}
+
+func (s *server2) StreamRoutes(stream xdspb2.RouteDiscoveryService_StreamRoutesServer) error {
+	return s.discoveryHandler(stream, resource.RouteConfigType)
 }
 
 // Fetch is the universal fetch method.
@@ -264,6 +205,10 @@ func (s *server2) FetchListeners(ctx context.Context, req *xdspb2.DiscoveryReque
 	return s.Fetch(ctx, req)
 }
 
+func (s *server2) FetchRoutes(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
+	return s.Fetch(ctx, req)
+}
+
 func (s *server2) DeltaAggregatedResources(_ discoverypb2.AggregatedDiscoveryService_DeltaAggregatedResourcesServer) error {
 	return errors.New("not implemented")
 }
@@ -277,5 +222,9 @@ func (s *server2) DeltaClusters(_ xdspb2.ClusterDiscoveryService_DeltaClustersSe
 }
 
 func (s *server2) DeltaListeners(_ xdspb2.ListenerDiscoveryService_DeltaListenersServer) error {
+	return errors.New("not implemented")
+}
+
+func (s *server2) DeltaRoutes(_ xdspb2.RouteDiscoveryService_DeltaRoutesServer) error {
 	return errors.New("not implemented")
 }

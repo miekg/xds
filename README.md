@@ -68,15 +68,25 @@ For helping the xds client bootstrap set: `export GRPC_XDS_BOOTSTRAP=./boostrap.
 
 ## Usage
 
-Start the management server and then the client:
+Start the management server, the servers and then the client:
 
 ~~~
 % ./xds -debug
 ~~~
 
+Servers (these match the endpoints as defined in the `cluster.hellowold.textpb` file.
+
+~~~
+% ./helloworld/server/server -addr 127.0.1.1:50051 &
+% ./helloworld/server/server -addr 127.0.0.1:50051 &
+~~~
+
+And then query:
+
 ~~~
 % ./helloworld/client/client -addr xds:///helloworld
 ~~~
+
 Note you can specify a DNS server to use, but then the client will *also* do DNS looks up and you
 get a weird mix of grpclb and xDS behavior:
 

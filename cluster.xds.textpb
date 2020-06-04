@@ -1,4 +1,5 @@
 name: "xds"
+lb_policy: ROUND_ROBIN
 type: EDS
 health_checks: <
     tcp_health_check: <
@@ -22,6 +23,9 @@ load_assignment: <
           >
         >
         health_status: HEALTHY
+        load_balancing_weight: <
+            value: 2
+        >
       >
     >
 >

@@ -34,7 +34,7 @@ load_assignment: <
         value: 2
       >
       locality: <
-        region: "us"
+        region: "eu"
       >
       lb_endpoints: <
         endpoint: <

@@ -46,7 +46,7 @@ DNS responses out of xds. CoreDNS can be found at <https://coredns.io>
     v1 for those.
 
  *  When xds starts up, files adhering to this glob "cluster.*.textpb" will be parsed as
-    Cluster protobuffer in text format. These define the set of clusters we know about.
+    Cluster protocol buffer in text format. These define the set of clusters we know about.
     Note: this is in effect the "admin interface", until we figure out how it should look. The
     wildcard should match the name of cluster being defined in the protobuf.
 
@@ -99,3 +99,8 @@ get a weird mix of grpclb and xDS behavior:
 * version per client id
 * canceling watches and a lot more of this stuff
 * move everything to the v2 proto and clean out the v3 stuff
+
+## Stuff Learned
+
+* gRPC must see `load_balancing_weight`, otherwise it will silently drop the endpoints
+* gRPC must have endpoints in different localities otherwise it will only use one?

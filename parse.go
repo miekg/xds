@@ -11,7 +11,6 @@ import (
 	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/miekg/xds/pkg/log"
 )
 
 func parseClusters(path string) ([]*clusterpb.Cluster, error) {
@@ -67,7 +66,6 @@ func parseClusters(path string) ([]*clusterpb.Cluster, error) {
 
 		// If the endpoints cluster name if not set, set it to the cluster name
 		if endpoints.ClusterName != pb.GetName() {
-			log.Warningf("Cluster %q has endpoints cluster name set to: %q, overriding", pb.GetName(), endpoints.ClusterName)
 			endpoints.ClusterName = pb.GetName()
 		}
 
@@ -80,6 +78,5 @@ func setDurationIfNil(a *duration.Duration, v time.Duration, msg string) {
 	if a != nil {
 		return
 	}
-	log.Debugf("%s to %v", msg, v)
 	a = &duration.Duration{Seconds: int64(v / time.Second)} // skip Nanos
 }

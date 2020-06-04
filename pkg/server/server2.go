@@ -194,18 +194,22 @@ func (s *server2) Fetch(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xds
 }
 
 func (s *server2) FetchClusters(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
+	req.TypeUrl = resource.ClusterType
 	return s.Fetch(ctx, req)
 }
 
 func (s *server2) FetchEndpoints(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
+	req.TypeUrl = resource.EndpointType
 	return s.Fetch(ctx, req)
 }
 
 func (s *server2) FetchListeners(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
+	req.TypeUrl = resource.ListenerType
 	return s.Fetch(ctx, req)
 }
 
 func (s *server2) FetchRoutes(ctx context.Context, req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
+	req.TypeUrl = resource.RouteConfigType
 	return s.Fetch(ctx, req)
 }
 

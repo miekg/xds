@@ -199,10 +199,12 @@ func (s *server) Fetch(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb
 }
 
 func (s *server) FetchClusters(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
+	req.TypeUrl = resource.ClusterType
 	return s.Fetch(ctx, req)
 }
 
 func (s *server) FetchEndpoints(ctx context.Context, req *xdspb.DiscoveryRequest) (*xdspb.DiscoveryResponse, error) {
+	req.TypeUrl = resource.EndpointType
 	return s.Fetch(ctx, req)
 }
 

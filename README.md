@@ -88,3 +88,4 @@ get a weird mix of grpclb and xDS behavior:
 
 * version per client id
 * canceling watches and a lot more of this stuff
+* move everything to the v2 proto and clean out the v3 stuff

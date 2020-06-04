@@ -6,11 +6,16 @@ import (
 	"strconv"
 	"strings"
 
-	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	edspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+
+	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
+	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/urfave/cli/v2"
 )
@@ -67,14 +72,14 @@ func healthStatus(c *cli.Context, health string) error {
 		if err := ptypes.UnmarshalAny(r, &any); err != nil {
 			continue
 		}
-		c, ok := any.Message.(*endpointpb.ClusterLoadAssignment)
+		c, ok := any.Message.(*xdspb2.ClusterLoadAssignment)
 		if !ok {
 			continue
 		}
 		for i := range c.Endpoints {
 			for j := range c.Endpoints[i].LbEndpoints {
-				ep := c.Endpoints[i].LbEndpoints[j].HostIdentifier.(*endpointpb.LbEndpoint_Endpoint).Endpoint
-				sa, ok := ep.Address.Address.(*corepb.Address_SocketAddress)
+				ep := c.Endpoints[i].LbEndpoints[j].HostIdentifier.(*edspb2.LbEndpoint_Endpoint).Endpoint
+				sa, ok := ep.Address.Address.(*corepb2.Address_SocketAddress)
 				if !ok {
 					return fmt.Errorf("endpoint %q does not contain a SocketAddress", ep)
 				}
@@ -82,7 +87,7 @@ func healthStatus(c *cli.Context, health string) error {
 				if endpoint == "" || addr == endpoint {
 					eh = append(eh, &healthpb.EndpointHealth{
 						HealthStatus: corepb.HealthStatus(healthNameToValue(health)),
-						Endpoint:     ep,
+						Endpoint:     EndpointToV3(ep),
 					})
 				}
 			}
@@ -112,12 +117,23 @@ func healthNameToValue(h string) int32 {
 	return v
 }
 
-func coreAddressToAddr(sa *corepb.Address_SocketAddress) string {
+func coreAddressToAddr(sa *corepb2.Address_SocketAddress) string {
 	addr := sa.SocketAddress.Address
 
-	port, ok := sa.SocketAddress.PortSpecifier.(*corepb.SocketAddress_PortValue)
+	port, ok := sa.SocketAddress.PortSpecifier.(*corepb2.SocketAddress_PortValue)
 	if !ok {
 		return addr
 	}
 	return net.JoinHostPort(addr, strconv.FormatUint(uint64(port.PortValue), 10))
+}
+
+func EndpointToV3(e *edspb2.Endpoint) *endpointpb.Endpoint {
+	b := proto.NewBuffer(nil)
+	b.SetDeterministic(true)
+	b.Marshal(e)
+	x := &endpointpb.Endpoint{}
+	if err := proto.Unmarshal(b.Bytes(), x); err != nil {
+		return nil
+	}
+	return x
 }

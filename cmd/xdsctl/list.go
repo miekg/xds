@@ -10,14 +10,12 @@ import (
 	"text/tabwriter"
 
 	_ "github.com/envoyproxy/go-control-plane/envoy/api/v2" // for v2.ClusterLoadAssignment
-	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	cdspb "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	"github.com/golang/protobuf/ptypes"
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/urfave/cli/v2"
 )
 
@@ -43,15 +41,13 @@ func list(c *cli.Context) error {
 		return err
 	}
 
-	clusters := []*clusterpb.Cluster{}
+	clusters := []*xdspb2.Cluster{}
 	for _, r := range resp.GetResources() {
 		var any ptypes.DynamicAny
 		if err := ptypes.UnmarshalAny(r, &any); err != nil {
 			return err
 		}
-		if c, ok := any.Message.(*clusterpb.Cluster); !ok {
-			continue
-		} else {
+		if c, ok := any.Message.(*xdspb2.Cluster); ok { // v2
 			clusters = append(clusters, c)
 		}
 	}
@@ -83,7 +79,7 @@ func list(c *cli.Context) error {
 			hcname = append(hcname, name)
 
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n", u.GetName(), resp.GetVersionInfo(), strings.Join(hcname, Joiner), strings.Join(metadataToStringSlice(u.GetMetadata()), Joiner))
+		fmt.Fprintf(w, "%s\t%s\t%s\t\n", u.GetName(), resp.GetVersionInfo(), strings.Join(hcname, Joiner))
 	}
 
 	return nil
@@ -120,15 +116,13 @@ func listEndpoints(c *cli.Context) error {
 		return err
 	}
 
-	endpoints := []*endpointpb.ClusterLoadAssignment{}
+	endpoints := []*xdspb2.ClusterLoadAssignment{}
 	for _, r := range resp.GetResources() {
 		var any ptypes.DynamicAny
 		if err := ptypes.UnmarshalAny(r, &any); err != nil {
 			return err
 		}
-		if c, ok := any.Message.(*endpointpb.ClusterLoadAssignment); !ok {
-			continue
-		} else {
+		if c, ok := any.Message.(*xdspb2.ClusterLoadAssignment); ok {
 			if cluster != "" && cluster != c.ClusterName {
 				continue
 			}
@@ -190,26 +184,6 @@ func listEndpoints(c *cli.Context) error {
 
 	}
 	return nil
-}
-
-// metadataToStringSlice converts the corepb.Metadata's Fields to a string slice where
-// each elements is FIELD:VALUE. VALUE's type must be structpb.Value_StringValue otherwise
-// it will be skipped.
-func metadataToStringSlice(m *corepb.Metadata) []string {
-	if m == nil {
-		return nil
-	}
-	fields := []string{}
-	for _, v := range m.FilterMetadata {
-		for k, v1 := range v.Fields {
-			v2, ok := v1.Kind.(*structpb.Value_StringValue)
-			if !ok {
-				continue
-			}
-			fields = append(fields, k+":"+v2.StringValue)
-		}
-	}
-	return fields
 }
 
 const Joiner = ","

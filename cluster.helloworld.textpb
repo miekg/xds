@@ -45,7 +45,7 @@ load_assignment: <
             >
           >
         >
-        health_status: UNHEALTHY
+        health_status: HEALTHY
         load_balancing_weight: <
             value: 2
         >

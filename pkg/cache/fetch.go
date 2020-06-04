@@ -13,6 +13,7 @@ import (
 	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/miekg/xds/pkg/log"
 	"github.com/miekg/xds/pkg/resource"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -31,6 +32,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			clusters = c.All()
 		}
 		version := uint64(0)
+
 		for _, n := range clusters {
 			cluster, v := c.Retrieve(n)
 			if cluster == nil {
@@ -47,6 +49,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
+		log.Debugf("Fetched endpoints (%d resources) for %q", len(resources), req.Node.Id)
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 
 	case resource.ClusterType:
@@ -72,6 +75,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
+		log.Debugf("Fetched clusters (%d resources) for %q", len(resources), req.Node.Id)
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 	case resource.ListenerType:
 		sort.Strings(req.ResourceNames)
@@ -117,6 +121,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
+		log.Debugf("Fetched listeners (%d resources) for %q", len(resources), req.Node.Id)
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 	case resource.RouteConfigType:
 		sort.Strings(req.ResourceNames)
@@ -161,6 +166,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
+		log.Debugf("Fetched routes (%d resources) for %q", len(resources), req.Node.Id)
 		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 
 	}

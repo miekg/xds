@@ -23,6 +23,9 @@ import (
 // in the reply.
 func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.DiscoveryResponse, error) {
 	var resources []*any.Any
+	if req.Node == nil {
+		req.Node = &corepb.Node{Id: "ADS"}
+	}
 
 	switch req.TypeUrl {
 	case resource.EndpointType:

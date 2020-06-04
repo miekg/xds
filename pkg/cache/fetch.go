@@ -15,7 +15,6 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/miekg/xds/pkg/log"
 	"github.com/miekg/xds/pkg/resource"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // Fetch fetches cluster data from the cluster. Here we probably deviate from the spec, as empty versions are allowed and we
@@ -111,7 +110,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			lst := &listenerpb.Listener{
 				Name: cluster.Name,
 				ApiListener: &listenerpb.ApiListener{
-					ApiListener: &anypb.Any{
+					ApiListener: &any.Any{
 						TypeUrl: resource.HttpConnManagerType,
 						Value:   hcmdata,
 					},

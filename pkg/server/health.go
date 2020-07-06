@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 
 	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
+	"github.com/miekg/xds/pkg/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -89,6 +90,7 @@ func (s *server) healthHandler(stream healthStream) error {
 }
 
 func (s *server) StreamHealthCheck(stream healthpb.HealthDiscoveryService_StreamHealthCheckServer) error {
+	log.Debug("StreamHealthCheck called")
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 
 	loadpb "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
+	"github.com/miekg/xds/pkg/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,19 +18,19 @@ const StatsFrequencyInSeconds = 2
 type loadStream interface {
 	grpc.ServerStream
 
-	Send(*loadpb.LoadStatsRequest) error
-	Recv() (*loadpb.LoadStatsResponse, error)
+	Send(*loadpb.LoadStatsResponse) error
+	Recv() (*loadpb.LoadStatsRequest, error)
 }
 
 // loadProcess handles a bi-di load stream request.
-func (s *server) loadProcess(stream loadStream, reqCh <-chan *loadpb.LoadStatsResponse) error {
-	send := func(resp *loadpb.LoadStatsRequest) error {
+func (s *server2) loadProcess(stream loadStream, reqCh <-chan *loadpb.LoadStatsRequest) error {
+	send := func(resp *loadpb.LoadStatsResponse) error {
 		return stream.Send(resp)
 	}
 
 	for {
 		select {
-		case <-s.ctx.Done():
+		case <-s.s.ctx.Done():
 			return nil
 		case req, more := <-reqCh:
 			if !more { // input stream ended or errored out
@@ -38,8 +39,15 @@ func (s *server) loadProcess(stream loadStream, reqCh <-chan *loadpb.LoadStatsRe
 			if req == nil {
 				return status.Errorf(codes.Unavailable, "empty request")
 			}
+			nodeID := req.GetNode().GetId()
+			// After Load Report is enabled, log the Load Report stats received
+			for _, clusterStats := range req.ClusterStats {
+				if len(clusterStats.UpstreamLocalityStats) > 0 {
+					log.Debug("Got stats from cluster `%s` node `%s` - %s", req.Node.Cluster, nodeID, clusterStats)
+				}
+			}
 
-			resp, err := s.cache.SetLoad(req)
+			resp, err := s.s.cache.SetLoad(req)
 			if err != nil {
 				return err
 			}
@@ -48,12 +56,13 @@ func (s *server) loadProcess(stream loadStream, reqCh <-chan *loadpb.LoadStatsRe
 	}
 }
 
-func (s *server) loadHandler(stream loadStream) error {
-	reqCh := make(chan *loadpb.LoadStatsResponse)
+func (s *server2) loadHandler(stream loadStream) error {
+	reqCh := make(chan *loadpb.LoadStatsRequest)
 	reqStop := int32(0)
 	go func() {
 		for {
 			req, err := stream.Recv()
+			log.Debug("loadHandler called")
 			if atomic.LoadInt32(&reqStop) != 0 {
 				return
 			}
@@ -68,6 +77,11 @@ func (s *server) loadHandler(stream loadStream) error {
 	err := s.loadProcess(stream, reqCh)
 	atomic.StoreInt32(&reqStop, 1)
 	return err
+}
+
+func (s *server2) StreamLoadStats(stream loadpb.LoadReportingService_StreamLoadStatsServer) error {
+	log.Debug("StreamLoadStats called")
+	return nil
 }
 
 /*

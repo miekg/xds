@@ -5,7 +5,7 @@ import (
 )
 
 // SetLoad sets the load for clusters and or endpoints. Adjust weights here as well??
-func (c *Cluster) SetLoad(req *loadpb.LoadStatsResponse) (*loadpb.LoadStatsRequest, error) {
+func (c *Cluster) SetLoad(req *loadpb.LoadStatsRequest) (*loadpb.LoadStatsResponse, error) {
 	return nil, nil
 	/*
 		toChange := make([]string, len(req.EndpointsHealth))

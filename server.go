@@ -24,6 +24,7 @@ import (
 	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
+	loadpb2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/miekg/xds/pkg/log"
 	"github.com/miekg/xds/pkg/server"
 	"google.golang.org/grpc"
@@ -55,6 +56,7 @@ func RunManagementServer(ctx context.Context, server server.Server, server2 serv
 	discoverypb2.RegisterAggregatedDiscoveryServiceServer(grpcServer, server2)
 	xdspb2.RegisterClusterDiscoveryServiceServer(grpcServer, server2)
 	xdspb2.RegisterListenerDiscoveryServiceServer(grpcServer, server2)
+	loadpb2.RegisterLoadReportingServiceServer(grpcServer, server2)
 
 	log.Infof("Management server listening on %s", addr)
 	go func() {

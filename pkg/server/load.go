@@ -40,7 +40,6 @@ func (s *server2) loadProcess(stream loadStream, reqCh <-chan *loadpb.LoadStatsR
 				return status.Errorf(codes.Unavailable, "empty request")
 			}
 			nodeID := req.GetNode().GetId()
-			// After Load Report is enabled, log the Load Report stats received
 			for _, clusterStats := range req.ClusterStats {
 				if len(clusterStats.UpstreamLocalityStats) > 0 {
 					log.Debug("Got stats from cluster `%s` node `%s` - %s", req.Node.Cluster, nodeID, clusterStats)
@@ -80,8 +79,7 @@ func (s *server2) loadHandler(stream loadStream) error {
 }
 
 func (s *server2) StreamLoadStats(stream loadpb.LoadReportingService_StreamLoadStatsServer) error {
-	log.Debug("StreamLoadStats called")
-	return nil
+	return s.loadHandler(stream)
 }
 
 /*

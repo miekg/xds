@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync"
 
-	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 )
 
 // Clusters holds the current clusters. For each cluster we only keep the ClusterLoadAssignments, for ClusterType
@@ -12,15 +12,15 @@ import (
 // incoming reply to see if we have a newer one.
 type Cluster struct {
 	mu      sync.RWMutex
-	c       map[string]*clusterpb.Cluster
+	c       map[string]*xdspb2.Cluster
 	version uint64 // if anything changes this gets a new version.
 }
 
 func New() *Cluster {
-	return &Cluster{c: make(map[string]*clusterpb.Cluster)}
+	return &Cluster{c: make(map[string]*xdspb2.Cluster)}
 }
 
-func (c *Cluster) Insert(ep *clusterpb.Cluster) {
+func (c *Cluster) Insert(ep *xdspb2.Cluster) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -28,7 +28,7 @@ func (c *Cluster) Insert(ep *clusterpb.Cluster) {
 	c.c[ep.GetName()] = ep
 }
 
-func (c *Cluster) Retrieve(name string) (*clusterpb.Cluster, uint64) {
+func (c *Cluster) Retrieve(name string) (*xdspb2.Cluster, uint64) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 

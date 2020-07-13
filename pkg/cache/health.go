@@ -1,14 +1,15 @@
 package cache
 
 import (
-	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+
 	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
 )
 
 // SetHealth sets the health for clusters and or endpoints.
 func (c *Cluster) SetHealth(req *healthpb.EndpointHealthResponse) (*healthpb.HealthCheckSpecifier, error) {
 	toChange := make([]string, len(req.EndpointsHealth))
-	health := make([]corepb.HealthStatus, len(req.EndpointsHealth))
+	health := make([]corepb2.HealthStatus, len(req.EndpointsHealth))
 	for i, ep := range req.EndpointsHealth {
 		toChange[i] = ep.GetEndpoint().GetAddress().GetSocketAddress().String()
 		health[i] = ep.HealthStatus

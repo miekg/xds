@@ -5,12 +5,11 @@ import (
 	"sort"
 	"strconv"
 
-	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	listenerpb "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	routepb "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	httppb "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
-	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/miekg/xds/pkg/log"
@@ -20,10 +19,10 @@ import (
 // Fetch fetches cluster data from the cluster. Here we probably deviate from the spec, as empty versions are allowed and we
 // will return the full list again. For versioning we use the highest version we see in the cache and use that as the version
 // in the reply.
-func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.DiscoveryResponse, error) {
+func (c *Cluster) Fetch(req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse, error) {
 	var resources []*any.Any
 	if req.Node == nil {
-		req.Node = &corepb.Node{Id: "ADS"}
+		req.Node = &corepb2.Node{Id: "ADS"}
 	}
 
 	switch req.TypeUrl {
@@ -43,7 +42,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			if v > version {
 				version = v
 			}
-			endpoints := endpointpb.ClusterLoadAssignment(*(cluster.GetLoadAssignment()))
+			endpoints := xdspb2.ClusterLoadAssignment(*(cluster.GetLoadAssignment()))
 			data, err := MarshalResource(&endpoints)
 			if err != nil {
 				return nil, err
@@ -52,7 +51,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		log.Debugf("Fetched endpoints (%d resources) for %q", len(resources), req.Node.Id)
-		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
+		return &xdspb2.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 
 	case resource.ClusterType:
 		sort.Strings(req.ResourceNames)
@@ -78,7 +77,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		log.Debugf("Fetched clusters (%d resources) for %q", len(resources), req.Node.Id)
-		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
+		return &xdspb2.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 	case resource.ListenerType:
 		sort.Strings(req.ResourceNames)
 		clusters := req.ResourceNames
@@ -99,8 +98,8 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 			hcm := &httppb.HttpConnectionManager{
 				RouteSpecifier: &httppb.HttpConnectionManager_Rds{
 					Rds: &httppb.Rds{
-						ConfigSource: &corepb.ConfigSource{
-							ConfigSourceSpecifier: &corepb.ConfigSource_Ads{Ads: &corepb.AggregatedConfigSource{}},
+						ConfigSource: &corepb2.ConfigSource{
+							ConfigSourceSpecifier: &corepb2.ConfigSource_Ads{Ads: &corepb2.AggregatedConfigSource{}},
 						},
 						RouteConfigName: cluster.Name,
 					},
@@ -124,7 +123,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		log.Debugf("Fetched listeners (%d resources) for %q", len(resources), req.Node.Id)
-		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
+		return &xdspb2.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 	case resource.RouteConfigType:
 		sort.Strings(req.ResourceNames)
 		clusters := req.ResourceNames
@@ -169,7 +168,7 @@ func (c *Cluster) Fetch(req *discoverypb.DiscoveryRequest) (*discoverypb.Discove
 		}
 		versionInfo := strconv.FormatUint(version, 10)
 		log.Debugf("Fetched routes (%d resources) for %q", len(resources), req.Node.Id)
-		return &discoverypb.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
+		return &xdspb2.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 
 	}
 	return nil, fmt.Errorf("unrecognized/unsupported type %q:", req.TypeUrl)

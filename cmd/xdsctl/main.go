@@ -74,9 +74,9 @@ func main() {
 			},
 			{
 				Name:        "weight",
-				Description: "Weight sets the endpoint's weight.",
+				Description: "Weight sets the endpoint's weight. With prefix + it will add, with - subtract, and no prefix will set.",
 				Usage:       "set endpoint's weight in a cluster",
-				ArgsUsage:   "CLUSTER ENDPOINT WEIGHT",
+				ArgsUsage:   "CLUSTER ENDPOINT [+/-]WEIGHT",
 				Action:      weight,
 			},
 			{

@@ -6,7 +6,7 @@ xDS is Envoy's discovery protocol. This repo contains xDS related utilities - in
 
  *  xdsctl - cli to manipulate and list details of endpoints and clusters.
 
-TLS is not implemented (yet). Note that this implements the v2/v3 xDS API, Envoy works with this API
+TLS is not implemented (yet). Note that this implements the v2 xDS API, Envoy works with this API
 as well.
 
 There is an admin interface specified, that uses the same protobufs (DiscoveryResponse) on a

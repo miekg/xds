@@ -11,14 +11,15 @@ func (c *Cluster) SetLoad(req *loadpb.LoadStatsRequest) (*loadpb.LoadStatsRespon
 	// we should check if we have the cluster, and then do something with the load.
 	// depending on LBPolicy we do different things with it?? Or just adjust the weights.
 	nodeID := req.GetNode().GetId()
+	println(nodeID)
 	for _, clusterStats := range req.ClusterStats {
 		if len(clusterStats.UpstreamLocalityStats) > 0 {
-			log.Debug("Got stats from cluster `%s` node `%s` - %s", req.Node.Cluster, nodeID, clusterStats)
+			log.Debugf("Got stats from cluster `%s` node `%s` - %s", req.Node.Cluster, nodeID, clusterStats)
 		}
 	}
 	return &loadpb.LoadStatsResponse{
-		Clusters:                  []string{req.GetNode().GetId()},
-		LoadReportingInterval:     &duration.Duration{Seconds: 10}, // was 2 seconds originally
+		Clusters:                  []string{}, // empty list, to say this is for all clusters? Need to check how envoy deals with this.
+		LoadReportingInterval:     &duration.Duration{Seconds: 2},
 		ReportEndpointGranularity: true,
 	}, nil
 }

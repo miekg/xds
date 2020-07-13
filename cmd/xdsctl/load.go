@@ -7,17 +7,16 @@ import (
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	edspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
-	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
 	loadpb2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/urfave/cli/v2"
 )
 
-// weight sets the weight for an endpoints in the cluster.
-func weight(c *cli.Context) error {
+// load sets the load for an endpoints in the cluster.
+func load(c *cli.Context) error {
 	args := c.Args().Slice()
 	if len(args) != 3 {
 		return ErrArg(args)
@@ -36,9 +35,12 @@ func weight(c *cli.Context) error {
 	cluster := args[0]
 	endpoint := args[1]
 	w := args[2]
-	weight, err := strconv.ParseInt(w, 10, 32)
+	load, err := strconv.ParseInt(w, 10, 32)
 	if err != nil {
 		return err
+	}
+	if load < 1 {
+		return fmt.Errorf("load must be positive integer")
 	}
 
 	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: []string{cluster}}
@@ -47,7 +49,11 @@ func weight(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	lsr := &loadpb2.LoadStatsRequest{Node: &corepb2.Node{Id: cluster}}
+
+	// Technically we can just send in the report and let the server worry about the existence of this endpoint...
+
+	// We search for the one endpoint, later we might introduce wildcards or stuff, like ignore the port?
+	endpoints := []*edspb2.Endpoint{}
 	for _, r := range resp.GetResources() {
 		var any ptypes.DynamicAny
 		if err := ptypes.UnmarshalAny(r, &any); err != nil {
@@ -66,27 +72,40 @@ func weight(c *cli.Context) error {
 					return fmt.Errorf("endpoint %q does not contain a SocketAddress", ep)
 				}
 				addr := coreAddressToAddr(sa)
-				if endpoint == "" || addr == endpoint {
-					eh = append(eh, &healthpb.EndpointHealth{
-						HealthStatus: corepb.HealthStatus(healthNameToValue(health)),
-						Endpoint:     EndpointToV3(ep),
-					})
+				if addr == endpoint {
+					endpoints = append(endpoints, ep)
 				}
 			}
 		}
 	}
-	if len(eh) == 0 {
+	if len(endpoints) == 0 {
 		return fmt.Errorf("no matching endpoints found")
 	}
-
-	hr := &healthpb.HealthCheckRequestOrEndpointHealthResponse{
-		RequestType: &healthpb.HealthCheckRequestOrEndpointHealthResponse_EndpointHealthResponse{
-			EndpointHealthResponse: &healthpb.EndpointHealthResponse{
-				EndpointsHealth: eh,
+	// do errors 'n stuff as well in the loadreport?
+	// Hack alert: not filing out the locality.
+	clstat := &edspb2.ClusterStats{
+		ClusterName: cluster,
+		UpstreamLocalityStats: []*edspb2.UpstreamLocalityStats{
+			{
+				UpstreamEndpointStats: []*edspb2.UpstreamEndpointStats{
+					{
+						Address:             endpoints[0].Address,
+						TotalIssuedRequests: uint64(load),
+					},
+				},
 			},
 		},
+		LoadReportInterval: &duration.Duration{Seconds: 2},
 	}
-	hds := healthpb.NewHealthDiscoveryServiceClient(cl.cc)
-	_, err = hds.FetchHealthCheck(c.Context, hr)
+	lr := &loadpb2.LoadStatsRequest{Node: &corepb2.Node{Id: cl.node.Id}, ClusterStats: []*edspb2.ClusterStats{clstat}}
+	lrs := loadpb2.NewLoadReportingServiceClient(cl.cc)
+	stream, err := lrs.StreamLoadStats(c.Context)
+	if err != nil {
+		return err
+	}
+	if err := stream.Send(lr); err != nil {
+		return nil
+	}
+	_, err = stream.Recv()
 	return err
 }

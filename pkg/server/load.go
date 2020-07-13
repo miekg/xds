@@ -35,7 +35,6 @@ func (s *server2) loadProcess(stream loadStream, reqCh <-chan *loadpb2.LoadStats
 			if req == nil {
 				return status.Errorf(codes.Unavailable, "empty request")
 			}
-
 			resp, err := s.s.cache.SetLoad(req)
 			if err != nil {
 				return err

@@ -11,7 +11,9 @@ import (
 
 	_ "github.com/envoyproxy/go-control-plane/envoy/api/v2" // for v2.ClusterLoadAssignment
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	edspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+
 	cdspb "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
@@ -139,21 +141,23 @@ func listEndpoints(c *cli.Context) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
 	if c.Bool("H") {
-		fmt.Fprintln(w, "CLUSTER\tVERSION\tENDPOINT\tLOCALITY\tHEALTH\tWEIGHT\t")
+		fmt.Fprintln(w, "CLUSTER\tVERSION\tENDPOINT\tLOCALITY\tHEALTH\tWEIGHT\tLOAD\tRATIO")
 	}
 	// we'll grab the data per localilty and then graph that. Locality is made up with Region/Zone/Subzone
-	data := [][5]string{} // indexed by localilty and then numerical (0: name, 1: endpoints, 2: locality, 3: status, 4: weight)
+	data := [][7]string{} // indexed by localilty and then numerical (0: name, 1: endpoints, 2: locality, 3: status, 4: weight, 5: load: 6: ratio)
 	for _, e := range endpoints {
 		for _, ep := range e.Endpoints {
 			endpoints := []string{}
 			healths := []string{}
 			weights := []string{}
+			loads := []string{}
 			for _, lb := range ep.GetLbEndpoints() {
 				port := strconv.Itoa(int(lb.GetEndpoint().GetAddress().GetSocketAddress().GetPortValue()))
 				endpoints = append(endpoints, net.JoinHostPort(lb.GetEndpoint().GetAddress().GetSocketAddress().GetAddress(), port))
 				healths = append(healths, corepb.HealthStatus_name[int32(lb.GetHealthStatus())])
 				weight := strconv.Itoa(int(lb.GetLoadBalancingWeight().GetValue()))
 				weights = append(weights, weight)
+				loads = append(loads, loadFromMetadata(lb))
 			}
 			locs := []string{}
 			loc := ep.GetLocality()
@@ -168,12 +172,14 @@ func listEndpoints(c *cli.Context) error {
 			}
 			where := strings.TrimSpace(strings.Join(locs, Joiner))
 
-			data = append(data, [5]string{
+			data = append(data, [7]string{
 				e.GetClusterName(),
 				strings.Join(endpoints, Joiner),
 				where,
 				strings.Join(healths, Joiner),
 				strings.Join(weights, Joiner),
+				strings.Join(loads, Joiner),
+				"",
 			})
 		}
 
@@ -184,6 +190,21 @@ func listEndpoints(c *cli.Context) error {
 
 	}
 	return nil
+}
+
+func loadFromMetadata(lb *edspb2.LbEndpoint) string {
+	if lb.Metadata == nil {
+		return "0"
+	}
+	s, ok := lb.Metadata.FilterMetadata["load"] // we store the load here
+	if !ok {
+		return "0"
+	}
+	if s.Fields == nil {
+		return "0"
+	}
+	sv := s.Fields["LOAD"] // 'LOAD' again, because nested maps
+	return fmt.Sprintf("%d", uint64(sv.GetNumberValue()))
 }
 
 const Joiner = ","

@@ -94,6 +94,12 @@ get a weird mix of grpclb and xDS behavior:
 % ./helloworld/client/client -addr dns://127.0.0.1:1053/helloworld.lb.example.org:50501
 ~~~
 
+## Load Reporting
+
+Load reporting is supported via LRS. However to save the reporting load back into the cluster, we
+use the metadata field of of the `*endpointdb2.LbEndpoint` where we store this value. This allows
+`xdscli` to extract it from the management server without adding new endpoints.
+
 ## TODO
 
 * version per client id

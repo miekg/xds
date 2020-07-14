@@ -11,9 +11,8 @@ import (
 
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	edspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-
 	"github.com/golang/protobuf/ptypes"
+	"github.com/miekg/xds/pkg/cache"
 	"github.com/urfave/cli/v2"
 )
 
@@ -148,7 +147,7 @@ func listEndpoints(c *cli.Context) error {
 		for _, ep := range e.Endpoints {
 			for _, lb := range ep.GetLbEndpoints() {
 				totalWeight += float64(lb.GetLoadBalancingWeight().GetValue())
-				totalLoad += loadFromMetadata(lb)
+				totalLoad += cache.LoadFromMetadata(lb)
 			}
 		}
 	}
@@ -171,12 +170,12 @@ func listEndpoints(c *cli.Context) error {
 				// add fraction of total weight send to this endpoint
 				weight := strconv.Itoa(int(lb.GetLoadBalancingWeight().GetValue()))
 				frac := float64(lb.GetLoadBalancingWeight().GetValue()) / totalWeight
-				weight = fmt.Sprintf("%s;%0.2f", weight, frac) // format: <weight>:<fraction of total>
+				weight = fmt.Sprintf("%s#%0.2f", weight, frac) // format: <weight>:<fraction of total>
 				weights = append(weights, weight)
 				// load
-				lfm := loadFromMetadata(lb)
+				lfm := cache.LoadFromMetadata(lb)
 				lfrac := lfm / totalLoad
-				loads = append(loads, fmt.Sprintf("%1.0f;%0.2f", lfm, lfrac))
+				loads = append(loads, fmt.Sprintf("%1.0f#%0.2f", lfm, lfrac))
 			}
 			locs := []string{}
 			loc := ep.GetLocality()
@@ -207,21 +206,6 @@ func listEndpoints(c *cli.Context) error {
 
 	}
 	return nil
-}
-
-func loadFromMetadata(lb *edspb2.LbEndpoint) float64 {
-	if lb.Metadata == nil {
-		return 0
-	}
-	s, ok := lb.Metadata.FilterMetadata["load"] // we store the load here
-	if !ok {
-		return 0
-	}
-	if s.Fields == nil {
-		return 0
-	}
-	sv := s.Fields["LOAD"] // 'LOAD' again, because nested maps
-	return sv.GetNumberValue()
 }
 
 const Joiner = ","

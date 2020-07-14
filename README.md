@@ -102,7 +102,8 @@ use the metadata field of of the `*endpointdb2.LbEndpoint` where we store this v
 
 ## TODO
 
-* version per client id
+* version per cluster; right now the version if global; if any cluster changes, the version is
+  upped.
 * canceling watches and a lot more of this stuff
 
 ## Stuff Learned

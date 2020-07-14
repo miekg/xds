@@ -7,8 +7,6 @@ import (
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	edspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	loadpb2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
@@ -43,8 +41,8 @@ func load(c *cli.Context) error {
 		return fmt.Errorf("load must be positive integer")
 	}
 
-	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: []string{cluster}}
-	eds := edspb.NewEndpointDiscoveryServiceClient(cl.cc)
+	dr := &xdspb2.DiscoveryRequest{Node: cl.node, ResourceNames: []string{cluster}}
+	eds := xdspb2.NewEndpointDiscoveryServiceClient(cl.cc)
 	resp, err := eds.FetchEndpoints(c.Context, dr)
 	if err != nil {
 		return err

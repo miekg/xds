@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
@@ -12,7 +12,7 @@ import (
 // Client talks to the grpc manager's endpoint.
 type Client struct {
 	cc   *grpc.ClientConn
-	node *corepb.Node
+	node *corepb2.Node
 	dry  bool
 }
 
@@ -20,7 +20,7 @@ type Client struct {
 // if flgClear is set grpc.WithInsecure is added to opts.
 func New(c *cli.Context, opts ...grpc.DialOption) (*Client, error) {
 	hostname, _ := os.Hostname()
-	node := &corepb.Node{Id: c.String("n"), Metadata: &structpb.Struct{
+	node := &corepb2.Node{Id: c.String("n"), Metadata: &structpb.Struct{
 		Fields: map[string]*structpb.Value{
 			"HOSTNAME":     {Kind: &structpb.Value_StringValue{StringValue: hostname}},
 			"BUILDVERSION": {Kind: &structpb.Value_StringValue{StringValue: c.String("v")}},

@@ -9,14 +9,10 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	_ "github.com/envoyproxy/go-control-plane/envoy/api/v2" // for v2.ClusterLoadAssignment
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	edspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 
-	cdspb "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
-	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/urfave/cli/v2"
 )
@@ -36,8 +32,8 @@ func list(c *cli.Context) error {
 		return listEndpoints(c)
 	}
 
-	dr := &xdspb.DiscoveryRequest{Node: cl.node}
-	cds := cdspb.NewClusterDiscoveryServiceClient(cl.cc)
+	dr := &xdspb2.DiscoveryRequest{Node: cl.node}
+	cds := xdspb2.NewClusterDiscoveryServiceClient(cl.cc)
 	resp, err := cds.FetchClusters(c.Context, dr)
 	if err != nil {
 		return err
@@ -111,8 +107,8 @@ func listEndpoints(c *cli.Context) error {
 	// these and it will have a watch for it; if we then ask again we don't get any replies if
 	// there isn't any updates to the clusters. So keep ResourceNames empty and we filter
 	// down below.
-	dr := &xdspb.DiscoveryRequest{Node: cl.node}
-	eds := edspb.NewEndpointDiscoveryServiceClient(cl.cc)
+	dr := &xdspb2.DiscoveryRequest{Node: cl.node}
+	eds := xdspb2.NewEndpointDiscoveryServiceClient(cl.cc)
 	resp, err := eds.FetchEndpoints(c.Context, dr)
 	if err != nil {
 		return err
@@ -154,7 +150,7 @@ func listEndpoints(c *cli.Context) error {
 			for _, lb := range ep.GetLbEndpoints() {
 				port := strconv.Itoa(int(lb.GetEndpoint().GetAddress().GetSocketAddress().GetPortValue()))
 				endpoints = append(endpoints, net.JoinHostPort(lb.GetEndpoint().GetAddress().GetSocketAddress().GetAddress(), port))
-				healths = append(healths, corepb.HealthStatus_name[int32(lb.GetHealthStatus())])
+				healths = append(healths, corepb2.HealthStatus_name[int32(lb.GetHealthStatus())])
 				weight := strconv.Itoa(int(lb.GetLoadBalancingWeight().GetValue()))
 				weights = append(weights, weight)
 				loads = append(loads, loadFromMetadata(lb))

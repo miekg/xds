@@ -9,13 +9,7 @@ import (
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	edspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	endpointpb "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-
-	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	xdspb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
-	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
-	"github.com/gogo/protobuf/proto"
+	healthpb2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/urfave/cli/v2"
 )
@@ -58,15 +52,15 @@ func healthStatus(c *cli.Context, health string) error {
 		return nil
 	}
 
-	dr := &xdspb.DiscoveryRequest{Node: cl.node, ResourceNames: []string{cluster}}
-	eds := edspb.NewEndpointDiscoveryServiceClient(cl.cc)
+	dr := &xdspb2.DiscoveryRequest{Node: cl.node, ResourceNames: []string{cluster}}
+	eds := xdspb2.NewEndpointDiscoveryServiceClient(cl.cc)
 	resp, err := eds.FetchEndpoints(c.Context, dr)
 	if err != nil {
 		return err
 	}
 	// Get the endpoints for this cluster, then either set them all to health or just the
 	// one that matches.
-	eh := []*healthpb.EndpointHealth{}
+	eh := []*healthpb2.EndpointHealth{}
 	for _, r := range resp.GetResources() {
 		var any ptypes.DynamicAny
 		if err := ptypes.UnmarshalAny(r, &any); err != nil {
@@ -85,9 +79,9 @@ func healthStatus(c *cli.Context, health string) error {
 				}
 				addr := coreAddressToAddr(sa)
 				if endpoint == "" || addr == endpoint {
-					eh = append(eh, &healthpb.EndpointHealth{
-						HealthStatus: corepb.HealthStatus(healthNameToValue(health)),
-						Endpoint:     EndpointToV3(ep),
+					eh = append(eh, &healthpb2.EndpointHealth{
+						HealthStatus: corepb2.HealthStatus(healthNameToValue(health)),
+						Endpoint:     ep,
 					})
 				}
 			}
@@ -97,20 +91,20 @@ func healthStatus(c *cli.Context, health string) error {
 		return fmt.Errorf("no matching endpoints found")
 	}
 
-	hr := &healthpb.HealthCheckRequestOrEndpointHealthResponse{
-		RequestType: &healthpb.HealthCheckRequestOrEndpointHealthResponse_EndpointHealthResponse{
-			EndpointHealthResponse: &healthpb.EndpointHealthResponse{
+	hr := &healthpb2.HealthCheckRequestOrEndpointHealthResponse{
+		RequestType: &healthpb2.HealthCheckRequestOrEndpointHealthResponse_EndpointHealthResponse{
+			EndpointHealthResponse: &healthpb2.EndpointHealthResponse{
 				EndpointsHealth: eh,
 			},
 		},
 	}
-	hds := healthpb.NewHealthDiscoveryServiceClient(cl.cc)
+	hds := healthpb2.NewHealthDiscoveryServiceClient(cl.cc)
 	_, err = hds.FetchHealthCheck(c.Context, hr)
 	return err
 }
 
 func healthNameToValue(h string) int32 {
-	v, ok := corepb.HealthStatus_value[strings.ToUpper(h)]
+	v, ok := corepb2.HealthStatus_value[strings.ToUpper(h)]
 	if !ok {
 		return -1
 	}
@@ -125,15 +119,4 @@ func coreAddressToAddr(sa *corepb2.Address_SocketAddress) string {
 		return addr
 	}
 	return net.JoinHostPort(addr, strconv.FormatUint(uint64(port.PortValue), 10))
-}
-
-func EndpointToV3(e *edspb2.Endpoint) *endpointpb.Endpoint {
-	b := proto.NewBuffer(nil)
-	b.SetDeterministic(true)
-	b.Marshal(e)
-	x := &endpointpb.Endpoint{}
-	if err := proto.Unmarshal(b.Bytes(), x); err != nil {
-		return nil
-	}
-	return x
 }

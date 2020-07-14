@@ -137,7 +137,7 @@ func listEndpoints(c *cli.Context) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
 	if c.Bool("H") {
-		fmt.Fprintln(w, "CLUSTER\tVERSION\tENDPOINT\tLOCALITY\tHEALTH\tWEIGHT\tLOAD")
+		fmt.Fprintln(w, "CLUSTER\tENDPOINT\tLOCALITY\tHEALTH\tWEIGHT\tLOAD")
 	}
 	// we'll grab the data per localilty and then graph that. Locality is made up with Region/Zone/Subzone
 	data := [][6]string{} // indexed by localilty and then numerical (0: name, 1: endpoints, 2: locality, 3: status, 4: weight, 5: load)
@@ -163,7 +163,7 @@ func listEndpoints(c *cli.Context) error {
 				weight := strconv.Itoa(int(lb.GetLoadBalancingWeight().GetValue()))
 				// add fraction of total weight send to this endpoint
 				frac := float64(lb.GetLoadBalancingWeight().GetValue()) / totalWeight
-				weight = fmt.Sprintf("%s  %0.2f", weight, frac) // format: <weight> <total fraction>
+				weight = fmt.Sprintf("%s:%0.2f", weight, frac) // format: <weight>:<fraction of total>
 
 				weights = append(weights, weight)
 				loads = append(loads, loadFromMetadata(lb))
@@ -193,7 +193,7 @@ func listEndpoints(c *cli.Context) error {
 
 	}
 	for _, d := range data {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t\n", d[0], resp.GetVersionInfo(), d[1], d[2], d[3], d[4])
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t\n", d[0], d[1], d[2], d[3], d[4])
 
 	}
 	return nil

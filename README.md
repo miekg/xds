@@ -100,10 +100,17 @@ Load reporting is supported via LRS. However to save the reporting load back int
 use the metadata field of of the `*endpointdb2.LbEndpoint` where we store this value. This allows
 `xdscli` to extract it from the management server without adding new endpoints.
 
+## Admin Interface
+
+On a different port an admin interface is running, this is basically shuffing the same protos over
+the wire, but in the opposite direction. This is currently only used to adjust the weight of
+clusters. In this case, first a cluster is retrieved via the normal interface and the re-uploaded
+with changed weights on the admin interface.
+
 ## TODO
 
 * version per cluster; right now the version if global; if any cluster changes, the version is
-  upped.
+  upped globaly.
 * canceling watches and a lot more of this stuff
 
 ## Stuff Learned

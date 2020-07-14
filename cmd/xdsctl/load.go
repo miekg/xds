@@ -32,8 +32,8 @@ func load(c *cli.Context) error {
 
 	cluster := args[0]
 	endpoint := args[1]
-	w := args[2]
-	load, err := strconv.ParseInt(w, 10, 32)
+	l := args[2]
+	load, err := strconv.ParseInt(l, 10, 32)
 	if err != nil {
 		return err
 	}

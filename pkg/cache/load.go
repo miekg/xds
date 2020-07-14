@@ -1,16 +1,15 @@
 package cache
 
 import (
-	"fmt"
-
 	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	edspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	loadpb2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/golang/protobuf/ptypes/duration"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"github.com/miekg/xds/pkg/log"
 )
 
-// SetLoad sets the load for clusters and or endpoints. Adjust weights here as well??
+// SetLoad sets the load for clusters and or endpoints.
 func (c *Cluster) SetLoad(req *loadpb2.LoadStatsRequest) (*loadpb2.LoadStatsResponse, error) {
 	clusters := []string{}
 	for _, clusterStats := range req.ClusterStats {
@@ -18,12 +17,33 @@ func (c *Cluster) SetLoad(req *loadpb2.LoadStatsRequest) (*loadpb2.LoadStatsResp
 			continue
 		}
 		clusters = append(clusters, clusterStats.ClusterName)
-		// set the metadata
+
+		cl, _ := c.Retrieve(clusterStats.ClusterName)
+		if cl == nil {
+			// we don't know this cluster
+			log.Debugf("Load report for unknown cluster %s", clusterStats.ClusterName)
+			continue
+		}
+		done := false
+		endpoints := cl.GetLoadAssignment()
+
 		for _, upstreamStats := range clusterStats.UpstreamLocalityStats {
 			for _, endpointStats := range upstreamStats.UpstreamEndpointStats {
-				fmt.Printf("%s\n", endpointStats.Address)
-				fmt.Printf("%d\n", endpointStats.TotalIssuedRequests)
+				for _, ep := range endpoints.Endpoints {
+					for _, lb := range ep.GetLbEndpoints() {
+						epa := lb.GetEndpoint().GetAddress().GetSocketAddress()
+						if epa.String() == endpointStats.Address.GetSocketAddress().String() {
+							SetLoadInMetadata(lb, float64(endpointStats.TotalIssuedRequests))
+							log.Debugf("Setting load %s, for %s in cluster %s", endpointStats.TotalIssuedRequests, endpointStats.Address, clusterStats.ClusterName)
+							done = true
+						}
+					}
+				}
 			}
+		}
+		if done {
+			// we've updated something, write it back to the cache.
+			c.Insert(cl)
 		}
 	}
 	return &loadpb2.LoadStatsResponse{
@@ -60,6 +80,8 @@ func SetLoadInMetadata(lb *edspb2.LbEndpoint, load float64) {
 	s, ok := lb.Metadata.FilterMetadata["load"]
 	if !ok {
 		lb.Metadata.FilterMetadata["load"] = &structpb.Struct{Fields: map[string]*structpb.Value{}}
+		lb.Metadata.FilterMetadata["load"].Fields["LOAD"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: load}}
+		return
 	}
 	s.Fields["LOAD"].GetKind().(*structpb.Value_NumberValue).NumberValue += load
 }

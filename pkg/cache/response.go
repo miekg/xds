@@ -1,18 +1,18 @@
 package cache
 
 import (
-	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/gogo/protobuf/proto"
 )
 
 type Response struct {
-	*discoverypb.DiscoveryResponse
+	*xdspb2.DiscoveryResponse
 	version string
 }
 
 type MarshaledResource = []byte
 
-// MarshalResource converts the Resource to MarshaledResource
+// MarshalResource converts the Resource to a MarshaledResource.
 func MarshalResource(resource proto.Message) (MarshaledResource, error) {
 	b := proto.NewBuffer(nil)
 	b.SetDeterministic(true)

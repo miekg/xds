@@ -104,7 +104,6 @@ use the metadata field of of the `*endpointdb2.LbEndpoint` where we store this v
 
 * version per client id
 * canceling watches and a lot more of this stuff
-* move everything to the v2 proto and clean out the v3 stuff
 
 ## Stuff Learned
 

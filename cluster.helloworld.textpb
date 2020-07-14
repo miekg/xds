@@ -53,5 +53,19 @@ load_assignment: <
             value: 2
         >
       >
+      lb_endpoints: <
+        endpoint: <
+          address: <
+            socket_address: <
+              address: "127.0.2.1"
+              port_value: 50051
+            >
+          >
+        >
+        health_status: HEALTHY
+        load_balancing_weight: <
+            value: 2
+        >
+      >
     >
 >

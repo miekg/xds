@@ -137,10 +137,19 @@ func listEndpoints(c *cli.Context) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 	defer w.Flush()
 	if c.Bool("H") {
-		fmt.Fprintln(w, "CLUSTER\tVERSION\tENDPOINT\tLOCALITY\tHEALTH\tWEIGHT\tLOAD\tRATIO")
+		fmt.Fprintln(w, "CLUSTER\tVERSION\tENDPOINT\tLOCALITY\tHEALTH\tWEIGHT\tLOAD")
 	}
 	// we'll grab the data per localilty and then graph that. Locality is made up with Region/Zone/Subzone
-	data := [][7]string{} // indexed by localilty and then numerical (0: name, 1: endpoints, 2: locality, 3: status, 4: weight, 5: load: 6: ratio)
+	data := [][6]string{} // indexed by localilty and then numerical (0: name, 1: endpoints, 2: locality, 3: status, 4: weight, 5: load)
+	totalWeight := 0.0
+	// same for load
+	for _, e := range endpoints {
+		for _, ep := range e.Endpoints {
+			for _, lb := range ep.GetLbEndpoints() {
+				totalWeight += float64(lb.GetLoadBalancingWeight().GetValue())
+			}
+		}
+	}
 	for _, e := range endpoints {
 		for _, ep := range e.Endpoints {
 			endpoints := []string{}
@@ -152,6 +161,10 @@ func listEndpoints(c *cli.Context) error {
 				endpoints = append(endpoints, net.JoinHostPort(lb.GetEndpoint().GetAddress().GetSocketAddress().GetAddress(), port))
 				healths = append(healths, corepb2.HealthStatus_name[int32(lb.GetHealthStatus())])
 				weight := strconv.Itoa(int(lb.GetLoadBalancingWeight().GetValue()))
+				// add fraction of total weight send to this endpoint
+				frac := float64(lb.GetLoadBalancingWeight().GetValue()) / totalWeight
+				weight = fmt.Sprintf("%s  %0.2f", weight, frac) // format: <weight> <total fraction>
+
 				weights = append(weights, weight)
 				loads = append(loads, loadFromMetadata(lb))
 			}
@@ -168,20 +181,18 @@ func listEndpoints(c *cli.Context) error {
 			}
 			where := strings.TrimSpace(strings.Join(locs, Joiner))
 
-			data = append(data, [7]string{
+			data = append(data, [6]string{
 				e.GetClusterName(),
 				strings.Join(endpoints, Joiner),
 				where,
 				strings.Join(healths, Joiner),
 				strings.Join(weights, Joiner),
 				strings.Join(loads, Joiner),
-				"",
 			})
 		}
 
 	}
-	for i := range data {
-		d := data[i]
+	for _, d := range data {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t\n", d[0], resp.GetVersionInfo(), d[1], d[2], d[3], d[4])
 
 	}

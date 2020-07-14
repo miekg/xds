@@ -34,7 +34,6 @@ func (c *Cluster) SetLoad(req *loadpb2.LoadStatsRequest) (*loadpb2.LoadStatsResp
 						epa := lb.GetEndpoint().GetAddress().GetSocketAddress()
 						if epa.String() == endpointStats.Address.GetSocketAddress().String() {
 							SetLoadInMetadata(lb, float64(endpointStats.TotalIssuedRequests))
-							log.Debugf("Setting load +%d, for %s in cluster %s", endpointStats.TotalIssuedRequests, endpointStats.Address.GetSocketAddress(), clusterStats.ClusterName)
 							done = true
 						}
 					}

@@ -163,7 +163,7 @@ func listEndpoints(c *cli.Context) error {
 				weight := strconv.Itoa(int(lb.GetLoadBalancingWeight().GetValue()))
 				// add fraction of total weight send to this endpoint
 				frac := float64(lb.GetLoadBalancingWeight().GetValue()) / totalWeight
-				weight = fmt.Sprintf("%s:%0.2f", weight, frac) // format: <weight>:<fraction of total>
+				weight = fmt.Sprintf("%s;%0.2f", weight, frac) // format: <weight>:<fraction of total>
 
 				weights = append(weights, weight)
 				loads = append(loads, loadFromMetadata(lb))

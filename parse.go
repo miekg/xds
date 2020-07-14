@@ -7,18 +7,18 @@ import (
 	"strings"
 	"time"
 
-	clusterpb "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	corepb "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/duration"
 )
 
-func parseClusters(path string) ([]*clusterpb.Cluster, error) {
+func parseClusters(path string) ([]*xdspb2.Cluster, error) {
 	dir, err := ioutil.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
-	cls := []*clusterpb.Cluster{}
+	cls := []*xdspb2.Cluster{}
 	for _, f := range dir {
 		if f.IsDir() {
 			continue
@@ -36,7 +36,7 @@ func parseClusters(path string) ([]*clusterpb.Cluster, error) {
 		// suffix and prefix check, now the middle is the cluster name
 		name := f.Name()[8 : len(f.Name())-7]
 
-		pb := &clusterpb.Cluster{}
+		pb := &xdspb2.Cluster{}
 		if err := proto.UnmarshalText(string(data), pb); err != nil {
 			return nil, fmt.Errorf("cluster %q: %s", name, err)
 		}
@@ -44,7 +44,7 @@ func parseClusters(path string) ([]*clusterpb.Cluster, error) {
 			return nil, fmt.Errorf("cluster name %q does not match file: %q: %s", pb.GetName(), name, f.Name())
 		}
 		// some sanity checks
-		if pb.GetType() != clusterpb.Cluster_EDS {
+		if pb.GetType() != xdspb2.Cluster_EDS {
 			return nil, fmt.Errorf("cluster %q must have discovery type set to EDS", name)
 		}
 		hcs := pb.GetHealthChecks()
@@ -57,8 +57,8 @@ func parseClusters(path string) ([]*clusterpb.Cluster, error) {
 			setDurationIfNil(hc.InitialJitter, 2*time.Second, fmt.Sprintf("Cluster %q, setting %s to", name, "InitialJitter"))
 			setDurationIfNil(hc.IntervalJitter, 1*time.Second, fmt.Sprintf("Cluster %q, setting %s to", name, "IntervalJitter"))
 		}
-		pb.EdsClusterConfig = &clusterpb.Cluster_EdsClusterConfig{
-			EdsConfig: &corepb.ConfigSource{ConfigSourceSpecifier: &corepb.ConfigSource_Ads{Ads: &corepb.AggregatedConfigSource{}}},
+		pb.EdsClusterConfig = &xdspb2.Cluster_EdsClusterConfig{
+			EdsConfig: &corepb2.ConfigSource{ConfigSourceSpecifier: &corepb2.ConfigSource_Ads{Ads: &corepb2.AggregatedConfigSource{}}},
 		}
 
 		// Now we're fixing up clusters, by setting some missing value and defaulting settings (mostly durations) that may be left out.

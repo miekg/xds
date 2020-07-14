@@ -19,14 +19,14 @@ type loadStream interface {
 }
 
 // loadProcess handles a bi-di load stream request.
-func (s *server2) loadProcess(stream loadStream, reqCh <-chan *loadpb2.LoadStatsRequest) error {
+func (s *server) loadProcess(stream loadStream, reqCh <-chan *loadpb2.LoadStatsRequest) error {
 	send := func(resp *loadpb2.LoadStatsResponse) error {
 		return stream.Send(resp)
 	}
 
 	for {
 		select {
-		case <-s.s.ctx.Done():
+		case <-s.ctx.Done():
 			return nil
 		case req, more := <-reqCh:
 			if !more { // input stream ended or errored out
@@ -35,7 +35,7 @@ func (s *server2) loadProcess(stream loadStream, reqCh <-chan *loadpb2.LoadStats
 			if req == nil {
 				return status.Errorf(codes.Unavailable, "empty request")
 			}
-			resp, err := s.s.cache.SetLoad(req)
+			resp, err := s.cache.SetLoad(req)
 			if err != nil {
 				return err
 			}
@@ -44,7 +44,7 @@ func (s *server2) loadProcess(stream loadStream, reqCh <-chan *loadpb2.LoadStats
 	}
 }
 
-func (s *server2) loadHandler(stream loadStream) error {
+func (s *server) loadHandler(stream loadStream) error {
 	reqCh := make(chan *loadpb2.LoadStatsRequest)
 	reqStop := int32(0)
 	go func() {
@@ -66,6 +66,6 @@ func (s *server2) loadHandler(stream loadStream) error {
 	return err
 }
 
-func (s *server2) StreamLoadStats(stream loadpb2.LoadReportingService_StreamLoadStatsServer) error {
+func (s *server) StreamLoadStats(stream loadpb2.LoadReportingService_StreamLoadStatsServer) error {
 	return s.loadHandler(stream)
 }

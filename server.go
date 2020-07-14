@@ -19,11 +19,8 @@ import (
 	"net"
 
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	cdspb "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	discoverypb2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
-	discoverypb "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	edspb "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
-	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
+	healthpb2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	loadpb2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/miekg/xds/pkg/log"
 	"github.com/miekg/xds/pkg/server"
@@ -33,7 +30,7 @@ import (
 const grpcMaxConcurrentStreams = 1000000
 
 // RunManagementServer starts an xDS server at the given port.
-func RunManagementServer(ctx context.Context, server server.Server, server2 server.Server2, addr string) {
+func RunManagementServer(ctx context.Context, server server.Server, addr string) {
 	// gRPC golang library sets a very small upper bound for the number gRPC/h2
 	// streams over a single TCP connection. If a proxy multiplexes requests over
 	// a single connection to the management server, then it might lead to
@@ -48,15 +45,12 @@ func RunManagementServer(ctx context.Context, server server.Server, server2 serv
 	}
 
 	// register services
-	discoverypb.RegisterAggregatedDiscoveryServiceServer(grpcServer, server)
-	edspb.RegisterEndpointDiscoveryServiceServer(grpcServer, server)
-	cdspb.RegisterClusterDiscoveryServiceServer(grpcServer, server)
-	healthpb.RegisterHealthDiscoveryServiceServer(grpcServer, server)
-
-	discoverypb2.RegisterAggregatedDiscoveryServiceServer(grpcServer, server2)
-	xdspb2.RegisterClusterDiscoveryServiceServer(grpcServer, server2)
-	xdspb2.RegisterListenerDiscoveryServiceServer(grpcServer, server2)
-	loadpb2.RegisterLoadReportingServiceServer(grpcServer, server2)
+	xdspb2.RegisterEndpointDiscoveryServiceServer(grpcServer, server)
+	healthpb2.RegisterHealthDiscoveryServiceServer(grpcServer, server)
+	discoverypb2.RegisterAggregatedDiscoveryServiceServer(grpcServer, server)
+	xdspb2.RegisterClusterDiscoveryServiceServer(grpcServer, server)
+	xdspb2.RegisterListenerDiscoveryServiceServer(grpcServer, server)
+	loadpb2.RegisterLoadReportingServiceServer(grpcServer, server)
 
 	log.Infof("Management server listening on %s", addr)
 	go func() {

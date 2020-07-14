@@ -44,8 +44,7 @@ func main() {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	srv := server.NewServer(ctx, config)
-	srv2 := server.NewServer2(srv)
-	go RunManagementServer(ctx, srv, srv2, *addr) // start the xDS server
+	go RunManagementServer(ctx, srv, *addr) // start the xDS server
 
 	sig := make(chan os.Signal)
 	signal.Notify(sig, os.Interrupt)

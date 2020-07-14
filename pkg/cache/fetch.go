@@ -7,9 +7,9 @@ import (
 
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	listenerpb "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	routepb "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	httppb "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	routepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	httppb2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
+	listenerpb2 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v2"
 
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/miekg/xds/pkg/log"
@@ -95,9 +95,9 @@ func (c *Cluster) Fetch(req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse
 				version = v
 			}
 
-			hcm := &httppb.HttpConnectionManager{
-				RouteSpecifier: &httppb.HttpConnectionManager_Rds{
-					Rds: &httppb.Rds{
+			hcm := &httppb2.HttpConnectionManager{
+				RouteSpecifier: &httppb2.HttpConnectionManager_Rds{
+					Rds: &httppb2.Rds{
 						ConfigSource: &corepb2.ConfigSource{
 							ConfigSourceSpecifier: &corepb2.ConfigSource_Ads{Ads: &corepb2.AggregatedConfigSource{}},
 						},
@@ -106,9 +106,9 @@ func (c *Cluster) Fetch(req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse
 				},
 			}
 			hcmdata, _ := MarshalResource(hcm)
-			lst := &listenerpb.Listener{
+			lst := &xdspb2.Listener{
 				Name: cluster.Name,
-				ApiListener: &listenerpb.ApiListener{
+				ApiListener: &listenerpb2.ApiListener{
 					ApiListener: &any.Any{
 						TypeUrl: resource.HttpConnManagerType,
 						Value:   hcmdata,
@@ -141,17 +141,17 @@ func (c *Cluster) Fetch(req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse
 				version = v
 			}
 
-			routec := &routepb.RouteConfiguration{
+			routec := &xdspb2.RouteConfiguration{
 				Name: cluster.Name,
-				VirtualHosts: []*routepb.VirtualHost{
+				VirtualHosts: []*routepb2.VirtualHost{
 					{
 						Domains: []string{cluster.Name}, // cluster.Name, here??
-						Routes: []*routepb.Route{
+						Routes: []*routepb2.Route{
 							{
-								Match: &routepb.RouteMatch{PathSpecifier: &routepb.RouteMatch_Prefix{Prefix: ""}},
-								Action: &routepb.Route_Route{
-									Route: &routepb.RouteAction{
-										ClusterSpecifier: &routepb.RouteAction_Cluster{Cluster: cluster.Name},
+								Match: &routepb2.RouteMatch{PathSpecifier: &routepb2.RouteMatch_Prefix{Prefix: ""}},
+								Action: &routepb2.Route_Route{
+									Route: &routepb2.RouteAction{
+										ClusterSpecifier: &routepb2.RouteAction_Cluster{Cluster: cluster.Name},
 									},
 								},
 							},

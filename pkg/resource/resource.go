@@ -27,21 +27,3 @@ const (
 	// AnyType is used only by ADS.
 	AnyType = ""
 )
-
-// MakeCluster create a clusterpb.Cluster.
-/*
-func MakeCluster(name string) *clusterpb.Cluster {
-	return &clusterpb.Cluster{
-		Name:                 name,
-		ConnectTimeout:       ptypes.DurationProto(5 * time.Second),
-		ClusterDiscoveryType: &clusterpb.Cluster_Type{Type: clusterpb.Cluster_EDS},
-		EdsClusterConfig: &clusterpb.Cluster_EdsClusterConfig{
-			EdsConfig: &corepb.ConfigSource{
-				ConfigSourceSpecifier: &corepb.ConfigSource_Ads{
-					Ads: &corepb.AggregatedConfigSource{},
-				},
-			},
-		},
-	}
-}
-*/

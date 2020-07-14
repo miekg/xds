@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	healthpb "github.com/envoyproxy/go-control-plane/envoy/service/health/v3"
+	healthpb2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	"github.com/miekg/xds/pkg/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -30,13 +30,13 @@ import (
 type healthStream interface {
 	grpc.ServerStream
 
-	Send(*healthpb.HealthCheckSpecifier) error
-	Recv() (*healthpb.HealthCheckRequestOrEndpointHealthResponse, error)
+	Send(*healthpb2.HealthCheckSpecifier) error
+	Recv() (*healthpb2.HealthCheckRequestOrEndpointHealthResponse, error)
 }
 
 // healthProcess handles a bi-di stream request.
-func (s *server) healthProcess(stream healthStream, reqCh <-chan *healthpb.HealthCheckRequestOrEndpointHealthResponse) error {
-	send := func(resp *healthpb.HealthCheckSpecifier) error {
+func (s *server) healthProcess(stream healthStream, reqCh <-chan *healthpb2.HealthCheckRequestOrEndpointHealthResponse) error {
+	send := func(resp *healthpb2.HealthCheckSpecifier) error {
 		return stream.Send(resp)
 	}
 
@@ -51,7 +51,7 @@ func (s *server) healthProcess(stream healthStream, reqCh <-chan *healthpb.Healt
 			if req == nil {
 				return status.Errorf(codes.Unavailable, "empty request")
 			}
-			hreq, ok := req.RequestType.(*healthpb.HealthCheckRequestOrEndpointHealthResponse_EndpointHealthResponse)
+			hreq, ok := req.RequestType.(*healthpb2.HealthCheckRequestOrEndpointHealthResponse_EndpointHealthResponse)
 			if !ok {
 				return status.Errorf(codes.Unavailable, "can only handle health check responses")
 			}
@@ -68,7 +68,7 @@ func (s *server) healthProcess(stream healthStream, reqCh <-chan *healthpb.Healt
 // healthHandler converts a blocking read call to channels and initiates stream processing
 func (s *server) healthHandler(stream healthStream) error {
 	// a channel for receiving incoming requests
-	reqCh := make(chan *healthpb.HealthCheckRequestOrEndpointHealthResponse)
+	reqCh := make(chan *healthpb2.HealthCheckRequestOrEndpointHealthResponse)
 	reqStop := int32(0)
 	go func() {
 		for {
@@ -89,16 +89,16 @@ func (s *server) healthHandler(stream healthStream) error {
 	return err
 }
 
-func (s *server) StreamHealthCheck(stream healthpb.HealthDiscoveryService_StreamHealthCheckServer) error {
+func (s *server) StreamHealthCheck(stream healthpb2.HealthDiscoveryService_StreamHealthCheckServer) error {
 	log.Debug("StreamHealthCheck called")
 	return nil
 }
 
-func (s *server) FetchHealthCheck(ctx context.Context, req *healthpb.HealthCheckRequestOrEndpointHealthResponse) (*healthpb.HealthCheckSpecifier, error) {
+func (s *server) FetchHealthCheck(ctx context.Context, req *healthpb2.HealthCheckRequestOrEndpointHealthResponse) (*healthpb2.HealthCheckSpecifier, error) {
 	switch x := req.RequestType.(type) {
-	case *healthpb.HealthCheckRequestOrEndpointHealthResponse_EndpointHealthResponse:
+	case *healthpb2.HealthCheckRequestOrEndpointHealthResponse_EndpointHealthResponse:
 		return s.cache.SetHealth(x.EndpointHealthResponse)
-	case *healthpb.HealthCheckRequestOrEndpointHealthResponse_HealthCheckRequest:
+	case *healthpb2.HealthCheckRequestOrEndpointHealthResponse_HealthCheckRequest:
 		return nil, fmt.Errorf("not implemented")
 	}
 	return nil, fmt.Errorf("not handled")

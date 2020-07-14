@@ -43,7 +43,9 @@ func (c *Cluster) SetLoad(req *loadpb2.LoadStatsRequest) (*loadpb2.LoadStatsResp
 		if done {
 			// we've updated something, write it back to the cache.
 			c.Insert(cl)
+			continue
 		}
+		log.Debug("Load report for unknown endpoints in cluster %s", clusterStats.ClusterName)
 	}
 	return &loadpb2.LoadStatsResponse{
 		Clusters:                  clusters,

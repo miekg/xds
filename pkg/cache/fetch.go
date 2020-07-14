@@ -11,7 +11,6 @@ import (
 	httppb2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	listenerpb2 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v2"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/miekg/xds/pkg/log"
 	"github.com/miekg/xds/pkg/resource"
 )
 
@@ -49,7 +48,6 @@ func (c *Cluster) Fetch(req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse
 			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
-		log.Debugf("Fetched endpoints (%d resources) for %q", len(resources), req.Node.Id)
 		return &xdspb2.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 
 	case resource.ClusterType:
@@ -75,7 +73,6 @@ func (c *Cluster) Fetch(req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse
 			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
-		log.Debugf("Fetched clusters (%d resources) for %q", len(resources), req.Node.Id)
 		return &xdspb2.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 	case resource.ListenerType:
 		sort.Strings(req.ResourceNames)
@@ -121,7 +118,6 @@ func (c *Cluster) Fetch(req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse
 			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
-		log.Debugf("Fetched listeners (%d resources) for %q", len(resources), req.Node.Id)
 		return &xdspb2.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 	case resource.RouteConfigType:
 		sort.Strings(req.ResourceNames)
@@ -166,7 +162,6 @@ func (c *Cluster) Fetch(req *xdspb2.DiscoveryRequest) (*xdspb2.DiscoveryResponse
 			resources = append(resources, &any.Any{TypeUrl: req.TypeUrl, Value: data})
 		}
 		versionInfo := strconv.FormatUint(version, 10)
-		log.Debugf("Fetched routes (%d resources) for %q", len(resources), req.Node.Id)
 		return &xdspb2.DiscoveryResponse{VersionInfo: versionInfo, Resources: resources, TypeUrl: req.TypeUrl}, nil
 
 	}

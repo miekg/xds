@@ -20,13 +20,23 @@ func (c *Cluster) SetLoad(req *loadpb2.LoadStatsRequest) (*loadpb2.LoadStatsResp
 
 		cl, _ := c.Retrieve(clusterStats.ClusterName)
 		if cl == nil {
-			// we don't know this cluster
 			log.Debugf("Load report for unknown cluster %s", clusterStats.ClusterName)
 			continue
 		}
+
+		// Is this our hack to set the weights via load reporting?
+		for _, upstreamStats := range clusterStats.UpstreamLocalityStats {
+			for _, endpointStats := range upstreamStats.UpstreamEndpointStats {
+				weight := WeightFromMetadata(endpointStats)
+				// if one of them has it we assume the entire things is about changing weights
+				if weight > 0 {
+					return c.SetWeight(req)
+				}
+			}
+		}
+
 		done := false
 		endpoints := cl.GetLoadAssignment()
-
 		for _, upstreamStats := range clusterStats.UpstreamLocalityStats {
 			for _, endpointStats := range upstreamStats.UpstreamEndpointStats {
 				for _, ep := range endpoints.Endpoints {
@@ -59,14 +69,14 @@ func LoadFromMetadata(lb *edspb2.LbEndpoint) float64 {
 	if lb.Metadata == nil {
 		return 0
 	}
-	s, ok := lb.Metadata.FilterMetadata["load"] // we store the load here
+	s, ok := lb.Metadata.FilterMetadata[LoadKind] // we store the load here
 	if !ok {
 		return 0
 	}
 	if s.Fields == nil {
 		return 0
 	}
-	sv := s.Fields["LOAD"] // 'LOAD' again, because nested maps
+	sv := s.Fields[LoadKind] // 'load' again, because nested maps
 	return sv.GetNumberValue()
 }
 
@@ -78,11 +88,11 @@ func SetLoadInMetadata(lb *edspb2.LbEndpoint, load float64) {
 	if lb.Metadata.FilterMetadata == nil {
 		lb.Metadata.FilterMetadata = map[string]*structpb.Struct{}
 	}
-	s, ok := lb.Metadata.FilterMetadata["load"]
+	s, ok := lb.Metadata.FilterMetadata[LoadKind]
 	if !ok {
-		lb.Metadata.FilterMetadata["load"] = &structpb.Struct{Fields: map[string]*structpb.Value{}}
-		lb.Metadata.FilterMetadata["load"].Fields["LOAD"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: load}}
+		lb.Metadata.FilterMetadata[LoadKind] = &structpb.Struct{Fields: map[string]*structpb.Value{}}
+		lb.Metadata.FilterMetadata[LoadKind].Fields[LoadKind] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: load}}
 		return
 	}
-	s.Fields["LOAD"].GetKind().(*structpb.Value_NumberValue).NumberValue += load
+	s.Fields[LoadKind].GetKind().(*structpb.Value_NumberValue).NumberValue += load
 }

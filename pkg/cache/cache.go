@@ -59,3 +59,8 @@ func (c *Cluster) Version() uint64 {
 
 	return c.version
 }
+
+const (
+	WeightKind = "weight" // Key name in metadata where the weight is stored.
+	LoadKind   = "load"   // Key name in the metadata where the load is stored.
+)

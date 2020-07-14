@@ -50,12 +50,13 @@ DNS responses out of xds. CoreDNS can be found at <https://coredns.io>
     Note: this is in effect the "admin interface", until we figure out how it should look. The
     wildcard should match the name of cluster being defined in the protobuf.
 
-See cmd/xdsctl/README.md for how to use the CLI.
+`cmd/xdsctl/xdsctl` is an CLI interface, it has extensive help built in.
 
 In xds the following protocols have been implemented:
 
-* xDS - Envoy's configuration and discovery protocol (includes LDS, RDS, EDS and CDS)
-* LRS - load reporting (also from Envoy) - not implemented yet.
+* xDS - Envoy's configuration and discovery protocol (includes LDS, RDS, EDS and CDS).
+* LRS - load reporting.
+* HRS - health reporting.
 
 For debugging add:
 
@@ -94,17 +95,44 @@ get a weird mix of grpclb and xDS behavior:
 % ./helloworld/client/client -addr dns://127.0.0.1:1053/helloworld.lb.example.org:50501
 ~~~
 
+Getting info out of the xds management server is done with xdsctl:
+
+~~~
+% ./cmd/xdsctl/xdsctl -s 127.0.0.1:18000 -k ls
+CLUSTER      VERSION   HEALTHCHECKS
+helloworld   2         HTTP
+xds          2         TCP
+
+% ./cmd/xdsctl/xdsctl -s 127.0.0.1:18000 -k ls helloworld
+CLUSTER      ENDPOINT                          LOCALITY   HEALTH            WEIGHT/RATIO    LOAD/RATIO
+helloworld   127.0.0.1:50051                   us         HEALTHY           2/0.33          0/0.00
+helloworld   127.0.1.1:50051,127.0.2.1:50051   eu         HEALTHY,HEALTHY   2/0.33,2/0.33   0/0.00,0/0.00
+
+% ./cmd/xdsctl/xdsctl -s 127.0.0.1:18000 -k ls helloworld
+CLUSTER      ENDPOINT                          LOCALITY   HEALTH            WEIGHT/RATIO    LOAD/RATIO
+helloworld   127.0.0.1:50051                   us         HEALTHY           2/0.33          0/0.00
+helloworld   127.0.1.1:50051,127.0.2.1:50051   eu         HEALTHY,HEALTHY   2/0.33,2/0.33   0/0.00,0/0.00
+~~~
+
 ## Load Reporting
 
 Load reporting is supported via LRS. However to save the reporting load back into the cluster, we
 use the metadata field of of the `*endpointdb2.LbEndpoint` where we store this value. This allows
-`xdscli` to extract it from the management server without adding new endpoints.
+`xdscli` to extract it from the management server without adding new bits to the proto. This is
+non-standard (probably), but as this is internal to `xds` it should not matter much.
+
+## Changing Cluster Weights
+
+Changing weights of clusters of more of an admin operation because you're changing the cluster data.
+As a hack this is implemented by the metadata in the load reporting protobuf
+(`UpstreamEndpointStats.Metadata`).
 
 ## TODO
 
 * version per cluster; right now the version if global; if any cluster changes, the version is
-  upped.
+  upped globaly.
 * canceling watches and a lot more of this stuff
+* tests!
 
 ## Stuff Learned
 

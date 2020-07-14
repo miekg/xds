@@ -32,13 +32,13 @@ func load(c *cli.Context) error {
 
 	cluster := args[0]
 	endpoint := args[1]
-	w := args[2]
-	load, err := strconv.ParseInt(w, 10, 32)
+	l := args[2]
+	load, err := strconv.ParseInt(l, 10, 32)
 	if err != nil {
 		return err
 	}
 	if load < 1 {
-		return fmt.Errorf("load must be positive integer")
+		return fmt.Errorf("load must be positive integer > 0")
 	}
 
 	dr := &xdspb2.DiscoveryRequest{Node: cl.node, ResourceNames: []string{cluster}}
@@ -79,7 +79,6 @@ func load(c *cli.Context) error {
 	if len(endpoints) == 0 {
 		return fmt.Errorf("no matching endpoints found")
 	}
-	// do errors 'n stuff as well in the loadreport?
 	// Hack alert: not filing out the locality.
 	clstat := &edspb2.ClusterStats{
 		ClusterName: cluster,

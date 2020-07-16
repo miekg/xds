@@ -9,8 +9,7 @@ xDS is Envoy's discovery protocol. This repo contains xDS related utilities - in
 TLS is not implemented (yet). Note that this implements the v2 xDS API, Envoy works with this API
 as well.
 
-There is an admin interface specified, that uses the same protobufs (DiscoveryResponse) on a
-different endpoint. xdsctl uses xDS to manipulate the cluster info stored. All other users that read
+`xdsctl` uses xDS to manipulate the cluster info stored. All other users that read
 from it must use ADS. Every 10 seconds `xds` will send out an update (if there are changes) to all
 connected clients.
 
@@ -29,16 +28,15 @@ Build the server and clients:
 Start the server with `xds` and then use the client to connect to it with `xdsctl -k -s
 127.0.0.1:18000 ls`. When starting up `xds` will read files `cluster.*.textpb` that contain clusters
 to use. This will continue during the runtime of the process; new clusters - if found - will be
-added. Removal is not implemented (yet).
-
-Both xDS and ADS are implemented by `xds`.
+added. Removal is not implemented.
 
 The `envoy-bootstrap.yaml` can be used to point Envoy to the xds control plane - note this only
 gives envoy CDS/EDS responses (via ADS), so no listeners nor routes. Envoy can be downloaded from
 <https://tetrate.bintray.com/getenvoy/>.
 
-CoreDNS (with the *traffic* plugin compiled in), can be started with the Corefile specified to get
-DNS responses out of xds. CoreDNS can be found at <https://coredns.io>
+CoreDNS (with the *traffic* plugin compiled in; see **traffic** branch in the coredns/coredns repo),
+can be started with the Corefile specified to get DNS responses out of xds. CoreDNS can be found at
+<https://github.com/coredns/coredns>
 
 ## xds
 
@@ -65,7 +63,7 @@ export RPC_GO_LOG_VERBOSITY_LEVEL=99
 export GRPC_GO_LOG_SEVERITY_LEVEL=info
 ~~~
 
-For helping the xds client bootstrap set: `export GRPC_XDS_BOOTSTRAP=./boostrap.json`
+For helping the xDS (gRPC) clients bootstrap set: `export GRPC_XDS_BOOTSTRAP=./boostrap.json`
 
 ## Usage
 
@@ -107,25 +105,23 @@ xds          2         TCP
 CLUSTER      ENDPOINT                          LOCALITY   HEALTH            WEIGHT/RATIO    LOAD/RATIO
 helloworld   127.0.0.1:50051                   us         HEALTHY           2/0.33          0/0.00
 helloworld   127.0.1.1:50051,127.0.2.1:50051   eu         HEALTHY,HEALTHY   2/0.33,2/0.33   0/0.00,0/0.00
-
-% ./cmd/xdsctl/xdsctl -s 127.0.0.1:18000 -k ls helloworld
-CLUSTER      ENDPOINT                          LOCALITY   HEALTH            WEIGHT/RATIO    LOAD/RATIO
-helloworld   127.0.0.1:50051                   us         HEALTHY           2/0.33          0/0.00
-helloworld   127.0.1.1:50051,127.0.2.1:50051   eu         HEALTHY,HEALTHY   2/0.33,2/0.33   0/0.00,0/0.00
 ~~~
+
+WEIGHT are the weights as assigned to the clusters, RATIO is the relative weight for each endpoint
+in the cluster. LOAD shows the load if reported back to the management cluster. The load RATIO
+should trail towards the weight RATIO if everything works well.
 
 ## Load Reporting
 
 Load reporting is supported via LRS. However to save the reporting load back into the cluster, we
 use the metadata field of of the `*endpointdb2.LbEndpoint` where we store this value. This allows
 `xdscli` to extract it from the management server without adding new bits to the proto. This is
-non-standard (probably), but as this is internal to `xds` it should not matter much.
+non-standard, but as this is internal to `xds` it should not matter much.
 
 ## Changing Cluster Weights
 
-Changing weights of clusters of more of an admin operation because you're changing the cluster data.
-As a hack this is implemented by the metadata in the load reporting protobuf
-(`UpstreamEndpointStats.Metadata`).
+Changing weights of clusters is implemented as a hack on top of the load reporting. This is
+implemented by the metadata in the load reporting protobuf (`UpstreamEndpointStats.Metadata`).
 
 ## TODO
 

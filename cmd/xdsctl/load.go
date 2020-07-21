@@ -7,7 +7,9 @@ import (
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	edspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	loadpb2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
+	corepb3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	edspb3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	loadpb3 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v3"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/urfave/cli/v2"
@@ -80,13 +82,13 @@ func load(c *cli.Context) error {
 		return fmt.Errorf("no matching endpoints found")
 	}
 	// Hack alert: not filing out the locality.
-	clstat := &edspb2.ClusterStats{
+	clstat := &edspb3.ClusterStats{
 		ClusterName: cluster,
-		UpstreamLocalityStats: []*edspb2.UpstreamLocalityStats{
+		UpstreamLocalityStats: []*edspb3.UpstreamLocalityStats{
 			{
-				UpstreamEndpointStats: []*edspb2.UpstreamEndpointStats{
+				UpstreamEndpointStats: []*edspb3.UpstreamEndpointStats{
 					{
-						Address:             endpoints[0].Address,
+						Address:             addressToV3(endpoints[0].Address),
 						TotalIssuedRequests: uint64(load),
 					},
 				},
@@ -94,8 +96,8 @@ func load(c *cli.Context) error {
 		},
 		LoadReportInterval: &duration.Duration{Seconds: 2},
 	}
-	lr := &loadpb2.LoadStatsRequest{Node: &corepb2.Node{Id: cl.node.Id}, ClusterStats: []*edspb2.ClusterStats{clstat}}
-	lrs := loadpb2.NewLoadReportingServiceClient(cl.cc)
+	lr := &loadpb3.LoadStatsRequest{Node: &corepb3.Node{Id: cl.node.Id}, ClusterStats: []*edspb3.ClusterStats{clstat}}
+	lrs := loadpb3.NewLoadReportingServiceClient(cl.cc)
 	stream, err := lrs.StreamLoadStats(c.Context)
 	if err != nil {
 		return err

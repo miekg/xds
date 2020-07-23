@@ -39,7 +39,9 @@ func (s *server) loadProcess(stream loadStream, reqCh <-chan *loadpb2.LoadStatsR
 			if err != nil {
 				return err
 			}
-			return send(resp)
+			if err := send(resp); err != nil {
+				return err
+			}
 		}
 	}
 }

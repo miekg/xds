@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	deep "github.com/mitchellh/copystructure"
 )
 
 // Clusters holds the current clusters. For each cluster we only keep the ClusterLoadAssignments, for ClusterType
@@ -28,6 +29,12 @@ func (c *Cluster) Insert(ep *xdspb2.Cluster) {
 	c.c[ep.GetName()] = ep
 }
 
+func (c *Cluster) InsertWithoutVersionUpdate(ep *xdspb2.Cluster) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.c[ep.GetName()] = ep
+}
+
 func (c *Cluster) Retrieve(name string) (*xdspb2.Cluster, uint64) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -36,7 +43,8 @@ func (c *Cluster) Retrieve(name string) (*xdspb2.Cluster, uint64) {
 	if !ok {
 		return nil, 0
 	}
-	return ep, c.version
+	dc, _ := deep.Copy(ep)
+	return dc.(*xdspb2.Cluster), c.version
 }
 
 // All returns all cluster names in alphabetical order available in the cache.

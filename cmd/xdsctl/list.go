@@ -66,7 +66,7 @@ func list(c *cli.Context) error {
 			x := fmt.Sprintf("%T", hc.HealthChecker)
 			// get the prefix of the name of the type
 			// HealthCheck_HttpHealthCheck_ --> Http
-			// and supper case it.
+			// and upper case it.
 			prefix := strings.Index(x, "HealthCheck_")
 			if prefix == -1 || len(x) < 11 {
 				continue
@@ -131,6 +131,30 @@ func listEndpoints(c *cli.Context) error {
 		return fmt.Errorf("no endpoints found")
 	}
 
+	// fetch cluster as well for load reporting stats.
+	cds := xdspb2.NewClusterDiscoveryServiceClient(cl.cc)
+	resp, err = cds.FetchClusters(c.Context, dr)
+	if err != nil {
+		return err
+	}
+
+	var clu *xdspb2.Cluster
+	for _, r := range resp.GetResources() {
+		var any ptypes.DynamicAny
+		if err := ptypes.UnmarshalAny(r, &any); err != nil {
+			return err
+		}
+		if c, ok := any.Message.(*xdspb2.Cluster); ok { // v2
+			if c.Name == cluster {
+				clu = c
+				break
+			}
+		}
+	}
+	if clu == nil {
+		return fmt.Errorf("no clusters found")
+	}
+
 	sort.Slice(endpoints, func(i, j int) bool { return endpoints[i].ClusterName < endpoints[j].ClusterName })
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
@@ -140,42 +164,32 @@ func listEndpoints(c *cli.Context) error {
 	}
 	// we'll grab the data per localilty and then graph that. Locality is made up with Region/Zone/Subzone
 	data := [][6]string{} // indexed by localilty and then numerical (0: name, 1: endpoints, 2: locality, 3: status, 4: weight, 5: load)
-	totalWeight := 0.0
-	totalLoad := 0.0
-	// same for load
+	totalWeight := uint32(0)
+	totalLoad := cache.TotalLoadFromMetadata(clu)
 	for _, e := range endpoints {
 		for _, ep := range e.Endpoints {
 			for _, lb := range ep.GetLbEndpoints() {
-				totalWeight += float64(lb.GetLoadBalancingWeight().GetValue())
-				totalLoad += cache.LoadFromMetadata(lb)
+				totalWeight += lb.GetLoadBalancingWeight().GetValue()
 			}
 		}
 	}
-	if totalWeight == 0.0 {
-		totalWeight = 1.0
+	if totalWeight == 0 {
+		totalWeight = 1
 	}
-	if totalLoad == 0.0 {
-		totalLoad = 1.0
+	if totalLoad == 0 {
+		totalLoad = 1
 	}
 	for _, e := range endpoints {
 		for _, ep := range e.Endpoints {
 			endpoints := []string{}
 			healths := []string{}
-			weights := []string{}
-			loads := []string{}
+			weight := uint32(0)
 			for _, lb := range ep.GetLbEndpoints() {
 				port := strconv.Itoa(int(lb.GetEndpoint().GetAddress().GetSocketAddress().GetPortValue()))
 				endpoints = append(endpoints, net.JoinHostPort(lb.GetEndpoint().GetAddress().GetSocketAddress().GetAddress(), port))
 				healths = append(healths, corepb2.HealthStatus_name[int32(lb.GetHealthStatus())])
-				// add fraction of total weight send to this endpoint
-				weight := strconv.Itoa(int(lb.GetLoadBalancingWeight().GetValue()))
-				frac := float64(lb.GetLoadBalancingWeight().GetValue()) / totalWeight
-				weight = fmt.Sprintf("%s/%0.2f", weight, frac) // format: <weight>:<fraction of total>
-				weights = append(weights, weight)
-				// load
-				lfm := cache.LoadFromMetadata(lb)
-				lfrac := lfm / totalLoad
-				loads = append(loads, fmt.Sprintf("%1.0f/%0.2f", lfm, lfrac))
+
+				weight += lb.GetLoadBalancingWeight().GetValue()
 			}
 			locs := []string{}
 			loc := ep.GetLocality()
@@ -188,15 +202,23 @@ func listEndpoints(c *cli.Context) error {
 			if x := loc.GetSubZone(); x != "" {
 				locs = append(locs, x)
 			}
-			where := strings.TrimSpace(strings.Join(locs, Joiner))
+
+			where := strings.TrimSpace(strings.Join(locs, "/"))
+
+			frac := float64(weight) / float64(totalWeight)
+			weights := fmt.Sprintf("%d/%0.2f", weight, frac)
+
+			load := cache.LoadFromMetadata(clu, where)
+			frac = float64(load) / float64(totalLoad)
+			loads := fmt.Sprintf("%d/%0.2f", load, frac)
 
 			data = append(data, [6]string{
 				e.GetClusterName(),
 				strings.Join(endpoints, Joiner),
 				where,
 				strings.Join(healths, Joiner),
-				strings.Join(weights, Joiner),
-				strings.Join(loads, Joiner),
+				weights,
+				loads,
 			})
 		}
 

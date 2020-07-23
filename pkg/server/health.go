@@ -60,7 +60,9 @@ func (s *server) healthProcess(stream healthStream, reqCh <-chan *healthpb2.Heal
 			if err != nil {
 				return err
 			}
-			return send(resp)
+			if err := send(resp); err != nil {
+				return err
+			}
 		}
 	}
 }

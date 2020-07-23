@@ -9,10 +9,11 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v0.3.0 // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
+	github.com/mitchellh/copystructure v1.0.0
 	github.com/urfave/cli/v2 v2.1.1
 	golang.org/x/net v0.0.0-20200602114024-627f9648deb9 // indirect
 	golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980 // indirect
 	google.golang.org/genproto v0.0.0-20200603110839-e855014d5736 // indirect
-	google.golang.org/grpc v1.30.0-dev.1.0.20200528205249-f818fd2a025e
+	google.golang.org/grpc v1.31.0-dev.0.20200722213622-a1ace9105a34
 	google.golang.org/grpc/examples v0.0.0-20200528205249-f818fd2a025e
 )

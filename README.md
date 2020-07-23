@@ -7,7 +7,8 @@ xDS is Envoy's discovery protocol. This repo contains xDS related utilities - in
  *  xdsctl - cli to manipulate and list details of endpoints and clusters.
 
 TLS is not implemented (yet). Note that this implements the v2 xDS API, Envoy works with this API
-as well, except for load reporting which uses the v3 xDS LRS API.
+as wel.
+
 
 `xdsctl` uses xDS to manipulate the cluster info stored. All other users that read
 from it must use ADS. Every 10 seconds `xds` will send out an update (if there are changes) to all
@@ -117,6 +118,10 @@ Load reporting is supported via LRS. However to save the reporting load back int
 use the metadata field of of the `*endpointdb2.LbEndpoint` where we store this value. This allows
 `xdscli` to extract it from the management server without adding new bits to the proto. This is
 non-standard, but as this is internal to `xds` it should not matter much.
+
+ests:1 > load_report_interval:<seconds:2 nanos:2744006 > >
+[INFO] cluster_name:"helloworld" upstream_locality_stats:<locality:<region:"eu" > total_successful_requests:1 > load_report_interval:<seconds:2 nanos:2744006 >
+
 
 ## Changing Cluster Weights
 

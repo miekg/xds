@@ -27,7 +27,7 @@ import (
 
 	"google.golang.org/grpc"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"
-	_ "google.golang.org/grpc/xds/experimental"
+	_ "google.golang.org/grpc/xds"
 )
 
 var (

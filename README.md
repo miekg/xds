@@ -103,9 +103,9 @@ helloworld   2         HTTP
 xds          2         TCP
 
 % ./cmd/xdsctl/xdsctl -s 127.0.0.1:18000 -k ls helloworld
-CLUSTER      ENDPOINT                          LOCALITY   HEALTH            WEIGHT/RATIO    LOAD/RATIO
-helloworld   127.0.0.1:50051                   us         HEALTHY           2/0.33          0/0.00
-helloworld   127.0.1.1:50051,127.0.2.1:50051   eu         HEALTHY,HEALTHY   2/0.33,2/0.33   0/0.00,0/0.00
+CLUSTER      ENDPOINT                          LOCALITY   HEALTH            WEIGHT/RATIO   LOAD/RATIO
+helloworld   127.0.0.1:50051                   us         HEALTHY           2/0.33         18/0.46
+helloworld   127.0.1.1:50051,127.0.2.1:50051   eu         HEALTHY,HEALTHY   4/0.67         21/0.54
 ~~~
 
 WEIGHT are the weights as assigned to the clusters, RATIO is the relative weight for each endpoint
@@ -115,13 +115,12 @@ should trail towards the weight RATIO if everything works well.
 ## Load Reporting
 
 Load reporting is supported via LRS. However to save the reporting load back into the cluster, we
-use the metadata field of of the `*endpointdb2.LbEndpoint` where we store this value. This allows
+use the metadata field of of the `*xdspb2.Cluster` where we store this value. This allows
 `xdscli` to extract it from the management server without adding new bits to the proto. This is
 non-standard, but as this is internal to `xds` it should not matter much.
 
-ests:1 > load_report_interval:<seconds:2 nanos:2744006 > >
-[INFO] cluster_name:"helloworld" upstream_locality_stats:<locality:<region:"eu" > total_successful_requests:1 > load_report_interval:<seconds:2 nanos:2744006 >
-
+Load is report per *locality*, as - as per gRPC - only `total_successful_requests` is used. Load
+reports are recieved every 2 seconds.
 
 ## Changing Cluster Weights
 
@@ -138,4 +137,5 @@ implemented by the metadata in the load reporting protobuf (`UpstreamEndpointSta
 ## Stuff Learned
 
 * gRPC must see `load_balancing_weight`, otherwise it will silently drop the endpoints
-* gRPC must have endpoints in different localities otherwise it will only use one?
+* gRPC must have endpoints in different localities otherwise it will only use one? Need to check the
+  algo in grpc source code

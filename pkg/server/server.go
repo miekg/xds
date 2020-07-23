@@ -110,7 +110,6 @@ func (s *server) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2.
 				return err
 			}
 			if resp.VersionInfo == versionInfo[req.TypeUrl] {
-				log.Debugf("Update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 				continue
 			}
 
@@ -130,7 +129,6 @@ func (s *server) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2.
 					return err
 				}
 				if resp.VersionInfo == versionInfo[req.TypeUrl] {
-					log.Debugf("Update %s for node with ID %q not needed version up to date: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 					continue
 				}
 

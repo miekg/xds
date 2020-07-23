@@ -110,7 +110,7 @@ func LoadFromMetadata(cl *xdspb2.Cluster, locality string) uint64 {
 	if s.Fields == nil {
 		return 0
 	}
-	sv := s.Fields[LoadKind+locality] // 'load' again, because nested maps
+	sv := s.Fields[LoadKind+locality] // 'load' + locality
 	return uint64(sv.GetNumberValue())
 }
 

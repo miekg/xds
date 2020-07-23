@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/duration"
+	"github.com/miekg/xds/pkg/cache"
 )
 
 func parseClusters(path string) ([]*xdspb2.Cluster, error) {
@@ -33,6 +35,7 @@ func parseClusters(path string) ([]*xdspb2.Cluster, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		// suffix and prefix check, now the middle is the cluster name
 		name := f.Name()[8 : len(f.Name())-7]
 
@@ -68,6 +71,12 @@ func parseClusters(path string) ([]*xdspb2.Cluster, error) {
 		if endpoints.ClusterName != pb.GetName() {
 			endpoints.ClusterName = pb.GetName()
 		}
+
+		// hash the file and set in the metadata.
+		h := sha1.New()
+		h.Write(data)
+		bs := h.Sum(nil)
+		cache.SetHashInMetadata(pb, fmt.Sprintf("%x", bs))
 
 		cls = append(cls, pb)
 	}

@@ -77,10 +77,18 @@ func rereadConfig(config *cache.Cluster, path string, stop <-chan bool) {
 			for _, c := range clusters {
 				i := sort.Search(len(current), func(i int) bool { return c.Name <= current[i] })
 				if i < len(current) && current[i] == c.Name {
+					cl, _ := config.Retrieve(current[i])
+					h1 := cache.HashFromMetadata(cl)
+					h2 := cache.HashFromMetadata(c)
+					if h1 != h2 {
+						log.Infof("cluster in %q updated, re-inserting cluster %q", path, c.Name)
+						config.Insert(c)
+
+					}
 					continue
 				}
 				// new cluster
-				log.Infof("Found new cluster in %q, adding cluster %s", path, c.Name)
+				log.Infof("Found new cluster in %q, adding cluster %q", path, c.Name)
 				config.Insert(c)
 			}
 		}

@@ -71,4 +71,5 @@ func (c *Cluster) Version() uint64 {
 const (
 	WeightKind = "weight" // Key name in metadata where the weight is stored.
 	LoadKind   = "load"   // Key name in the metadata where the load is stored.
+	HashKind   = "hash"   // hash of the textpb cluster definition.
 )

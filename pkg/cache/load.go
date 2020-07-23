@@ -3,14 +3,14 @@ package cache
 import (
 	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	edspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	loadpb3 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v3"
+	loadpb2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/golang/protobuf/ptypes/duration"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/miekg/xds/pkg/log"
 )
 
 // SetLoad sets the load for clusters and or endpoints.
-func (c *Cluster) SetLoad(req *loadpb3.LoadStatsRequest) (*loadpb3.LoadStatsResponse, error) {
+func (c *Cluster) SetLoad(req *loadpb2.LoadStatsRequest) (*loadpb2.LoadStatsResponse, error) {
 	clusters := []string{}
 	for _, clusterStats := range req.ClusterStats {
 		if len(clusterStats.UpstreamLocalityStats) == 0 {
@@ -57,7 +57,7 @@ func (c *Cluster) SetLoad(req *loadpb3.LoadStatsRequest) (*loadpb3.LoadStatsResp
 		}
 		log.Debug("Load report for unknown endpoints in cluster %s", clusterStats.ClusterName)
 	}
-	return &loadpb3.LoadStatsResponse{
+	return &loadpb2.LoadStatsResponse{
 		Clusters:                  clusters,
 		LoadReportingInterval:     &duration.Duration{Seconds: 2},
 		ReportEndpointGranularity: true,

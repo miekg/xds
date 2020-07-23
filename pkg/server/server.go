@@ -13,7 +13,7 @@ import (
 	corepb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	discoverypb2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	healthpb2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
-	loadpb3 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v3"
+	loadpb2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/miekg/xds/pkg/cache"
 	"github.com/miekg/xds/pkg/log"
 	"github.com/miekg/xds/pkg/resource"
@@ -29,8 +29,7 @@ type Server interface {
 	xdspb2.ClusterDiscoveryServiceServer
 	xdspb2.ListenerDiscoveryServiceServer
 	xdspb2.RouteDiscoveryServiceServer
-	// envoy reports load with the v3 proto
-	loadpb3.LoadReportingServiceServer
+	loadpb2.LoadReportingServiceServer
 	healthpb2.HealthDiscoveryServiceServer
 
 	// Fetch is the universal fetch method for discovery requests

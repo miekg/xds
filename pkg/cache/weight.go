@@ -1,8 +1,8 @@
 package cache
 
 import (
-	edspb3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	loadpb3 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v3"
+	edspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	loadpb2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/golang/protobuf/ptypes/duration"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
@@ -10,7 +10,7 @@ import (
 )
 
 // SetWeight sets the weight within cluster for endpoints.
-func (c *Cluster) SetWeight(req *loadpb3.LoadStatsRequest) (*loadpb3.LoadStatsResponse, error) {
+func (c *Cluster) SetWeight(req *loadpb2.LoadStatsRequest) (*loadpb2.LoadStatsResponse, error) {
 	clusters := []string{}
 	for _, clusterStats := range req.ClusterStats {
 		if len(clusterStats.UpstreamLocalityStats) == 0 {
@@ -52,7 +52,7 @@ func (c *Cluster) SetWeight(req *loadpb3.LoadStatsRequest) (*loadpb3.LoadStatsRe
 		}
 		log.Debug("Weight change for unknown endpoints in cluster %s", clusterStats.ClusterName)
 	}
-	return &loadpb3.LoadStatsResponse{
+	return &loadpb2.LoadStatsResponse{
 		Clusters:                  clusters,
 		LoadReportingInterval:     &duration.Duration{Seconds: 2},
 		ReportEndpointGranularity: true,
@@ -60,7 +60,7 @@ func (c *Cluster) SetWeight(req *loadpb3.LoadStatsRequest) (*loadpb3.LoadStatsRe
 }
 
 // WeightFromMetadata returns the weight from the metadata in the load report. If there is none, 0 is returned.
-func WeightFromMetadata(us *edspb3.UpstreamEndpointStats) uint32 {
+func WeightFromMetadata(us *edspb2.UpstreamEndpointStats) uint32 {
 	if us.Metadata == nil || us.Metadata.Fields == nil {
 		return 0
 	}
@@ -71,7 +71,7 @@ func WeightFromMetadata(us *edspb3.UpstreamEndpointStats) uint32 {
 	return uint32(w.GetKind().(*structpb.Value_NumberValue).NumberValue)
 }
 
-func SetWeightInMetadata(us *edspb3.UpstreamEndpointStats, weight uint32) {
+func SetWeightInMetadata(us *edspb2.UpstreamEndpointStats, weight uint32) {
 	if us.Metadata == nil {
 		us.Metadata = &structpb.Struct{Fields: map[string]*structpb.Value{}}
 	}

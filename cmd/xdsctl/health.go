@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 	"strings"
 
 	xdspb2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -107,4 +109,14 @@ func healthNameToValue(h string) int32 {
 		return -1
 	}
 	return v
+}
+
+func coreAddressToAddr(sa *corepb2.Address_SocketAddress) string {
+	addr := sa.SocketAddress.Address
+
+	port, ok := sa.SocketAddress.PortSpecifier.(*corepb2.SocketAddress_PortValue)
+	if !ok {
+		return addr
+	}
+	return net.JoinHostPort(addr, strconv.FormatUint(uint64(port.PortValue), 10))
 }

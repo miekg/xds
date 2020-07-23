@@ -5,7 +5,7 @@ package server
 import (
 	"sync/atomic"
 
-	loadpb3 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v3"
+	loadpb2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,13 +14,13 @@ import (
 type loadStream interface {
 	grpc.ServerStream
 
-	Send(*loadpb3.LoadStatsResponse) error
-	Recv() (*loadpb3.LoadStatsRequest, error)
+	Send(*loadpb2.LoadStatsResponse) error
+	Recv() (*loadpb2.LoadStatsRequest, error)
 }
 
 // loadProcess handles a bi-di load stream request.
-func (s *server) loadProcess(stream loadStream, reqCh <-chan *loadpb3.LoadStatsRequest) error {
-	send := func(resp *loadpb3.LoadStatsResponse) error {
+func (s *server) loadProcess(stream loadStream, reqCh <-chan *loadpb2.LoadStatsRequest) error {
+	send := func(resp *loadpb2.LoadStatsResponse) error {
 		return stream.Send(resp)
 	}
 
@@ -45,7 +45,7 @@ func (s *server) loadProcess(stream loadStream, reqCh <-chan *loadpb3.LoadStatsR
 }
 
 func (s *server) loadHandler(stream loadStream) error {
-	reqCh := make(chan *loadpb3.LoadStatsRequest)
+	reqCh := make(chan *loadpb2.LoadStatsRequest)
 	reqStop := int32(0)
 	go func() {
 		for {
@@ -66,6 +66,6 @@ func (s *server) loadHandler(stream loadStream) error {
 	return err
 }
 
-func (s *server) StreamLoadStats(stream loadpb3.LoadReportingService_StreamLoadStatsServer) error {
+func (s *server) StreamLoadStats(stream loadpb2.LoadReportingService_StreamLoadStatsServer) error {
 	return s.loadHandler(stream)
 }

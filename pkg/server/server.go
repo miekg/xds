@@ -116,7 +116,6 @@ func (s *server) discoveryProcess(stream discoveryStream2, reqCh <-chan *xdspb2.
 			if err := send(resp); err != nil {
 				return err
 			}
-			log.Infof("Updated %s for node with ID %q with version: %s", req.TypeUrl, node.Id, versionInfo[req.TypeUrl])
 			versionInfo[req.TypeUrl] = resp.GetVersionInfo()
 		case <-tick.C:
 			req := &xdspb2.DiscoveryRequest{}

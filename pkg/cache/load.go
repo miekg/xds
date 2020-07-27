@@ -15,10 +15,10 @@ import (
 func (c *Cluster) SetLoad(req *loadpb2.LoadStatsRequest) (*loadpb2.LoadStatsResponse, error) {
 	clusters := []string{}
 	for _, clusterStats := range req.ClusterStats {
+		clusters = append(clusters, clusterStats.ClusterName)
 		if len(clusterStats.UpstreamLocalityStats) == 0 {
 			continue
 		}
-		clusters = append(clusters, clusterStats.ClusterName)
 
 		cl, _ := c.Retrieve(clusterStats.ClusterName)
 		if cl == nil {
@@ -89,7 +89,10 @@ func (c *Cluster) SetLoad(req *loadpb2.LoadStatsRequest) (*loadpb2.LoadStatsResp
 	// if there wasn't an actual load report this was the initial ping that load "are coming", in that case
 	// node Id contains the cluster we're interested in, so put that in the cluster slice.
 	if len(clusters) == 0 {
-		clusters = []string{req.Node.Id}
+		// highly questionable if this is actually according to spec. No cluster is a report should error probably.
+		if req.Node != nil {
+			clusters = []string{req.Node.Id}
+		}
 	}
 	return &loadpb2.LoadStatsResponse{
 		Clusters:              clusters,
